@@ -1,0 +1,29 @@
+{
+  "schemaVersion": 1,
+  "templateId": "autorun-hardening",
+  "displayName": "Désactivation de l'exécution automatique (Autorun/AutoPlay)",
+  "category": "Périphériques",
+  "description": "Désactive l'exécution automatique des lecteurs pour empêcher l'amorçage de logiciels malveillants depuis des supports amovibles ou partages réseau.",
+  "expectedEffect": "Windows n'exécute plus automatiquement les fichiers Autorun.inf présents sur les supports amovibles (tous types de lecteurs) et désactive la boîte de dialogue AutoPlay.",
+  "scope": "Computer",
+  "riskLevel": "Low",
+  "supportedClients": ["Windows 10", "Windows 11"],
+  "requirements": [
+    "Aucun prérequis : stratégies natives Explorer (Turn off Autoplay, Disallow Autoplay commands)"
+  ],
+  "parameters": [
+    {
+      "name": "disableAutorun",
+      "displayName": "Désactiver l'exécution automatique",
+      "type": "Boolean",
+      "description": "Coche pour désactiver l'Autorun sur tous les lecteurs (recommandé). Décoche pour rétablir le comportement par défaut de Windows.",
+      "isRequired": true
+    }
+  ],
+  "warnings": [
+    "Les médias fournis avec certains équipements (périphériques OEM, kits d'installation) ne se lanceront plus automatiquement ; l'installation reste possible manuellement.",
+    "Compléter avec le modèle « Restrictions de stockage amovible (USB) » pour un contrôle complet des supports amovibles."
+  ],
+  "supportStatus": "Available",
+  "supportNote": "Chemins vérifiés : HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\Explorer!NoDriveTypeAutoRun=255 (tous lecteurs) et !NoAutorun=1 (Configuration ordinateur). Rétablissement : supprimer les deux valeurs."
+}

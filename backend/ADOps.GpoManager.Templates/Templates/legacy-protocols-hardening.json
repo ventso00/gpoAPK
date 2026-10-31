@@ -1,0 +1,45 @@
+{
+  "schemaVersion": 1,
+  "templateId": "legacy-protocols-hardening",
+  "displayName": "Désactivation des protocoles hérités (SMBv1, LLMNR, NTLMv1)",
+  "category": "Réseau",
+  "description": "Neutralise les protocoles réseau hérités massivement exploités par les attaques parPropagation et par interception d'identifiants : SMBv1 (WannaCry/NotPetya), LLMNR/NBT-NS (empoisonnement Responder), et l'authentification LM/NTLMv1.",
+  "expectedEffect": "Le serveur SMB n'accepte plus les connexions SMBv1 ; le poste ne répond plus aux requêtes de résolution de nom locale (LLMNR) ; seules les réponses NTLMv2 sont acceptées pour l'authentification réseau.",
+  "scope": "Computer",
+  "riskLevel": "High",
+  "supportedClients": ["Windows 10", "Windows 11"],
+  "requirements": [
+    "Aucun périphérique ou application métier n'utilise encore SMBv1 (imprimantes réseau anciennes, NAS, copieurs) — à vérifier avant déploiement",
+    "Aucune application legacy dépendant de NTLMv1/LM (vérifiable via l'audit NTLM du contrôleur de domaine)"
+  ],
+  "parameters": [
+    {
+      "name": "disableSmb1",
+      "displayName": "Désactiver le serveur SMBv1",
+      "type": "Boolean",
+      "description": "Vrai pour désactiver le protocole serveur SMBv1 (valeur SMB1=0) — mitigation WannaCry standard.",
+      "isRequired": true
+    },
+    {
+      "name": "disableLlmnr",
+      "displayName": "Désactiver la résolution de noms multicast (LLMNR)",
+      "type": "Boolean",
+      "description": "Vrai pour refuser les réponses LLMNR (valeur EnableMulticast=0) — neutralise les attaques par empoisonnement Responder.",
+      "isRequired": true
+    },
+    {
+      "name": "enforceNtlmv2",
+      "displayName": "N'autoriser que NTLMv2",
+      "type": "Boolean",
+      "description": "Vrai pour fixer le niveau d'authentification LAN Manager sur « N'envoyer que NTLMv2, refuser LM et NTLM » (LmCompatibilityLevel=5).",
+      "isRequired": true
+    }
+  ],
+  "warnings": [
+    "La désactivation de SMBv1 est le changement de compatibilité le plus impactant : inventorier d'abord avec Get-SmbConnection / journaux SMBServer du domaine.",
+    "LmCompatibilityLevel=5 peut couper les clients très anciens (postes XP/2003 résiduels, équipements embarqués).",
+    "La désactivation SMBv1 (valeur SMB1 du serveur LanmanServer) ne retire pas le pilote client mrxsmb10 : pour un retrait complet, désinstaller la fonctionnalité FS-SMB1 sur les postes."
+  ],
+  "supportStatus": "Available",
+  "supportNote": "Chemins vérifiés : HKLM\\SYSTEM\\CurrentControlSet\\Services\\LanmanServer\\Parameters!SMB1=0 ; HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows NT\\DNSClient!EnableMulticast=0 (stratégie « Désactiver la résolution de noms multicast ») ; HKLM\\SYSTEM\\CurrentControlSet\\Control\\Lsa!LmCompatibilityLevel=5 (stratégie « Sécurité réseau : niveau d'authentification LAN Manager »)."
+}

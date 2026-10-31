@@ -1,0 +1,130 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://adops.local/schemas/template.schema.json",
+  "title": "Modèle de stratégie ADOps GPO Manager",
+  "description": "Schéma des fichiers JSON du catalogue de modèles (backend/ADOps.GpoManager.Templates/Templates/*.json). Version du schéma : 1.",
+  "type": "object",
+  "required": ["schemaVersion", "templateId", "displayName", "category", "description", "expectedEffect", "scope", "riskLevel", "supportedClients", "parameters", "supportStatus"],
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": {
+      "type": "integer",
+      "const": 1,
+      "description": "Version du schéma. Toute valeur autre que celle du loader (TemplateCatalog.CurrentSchemaVersion) entraîne le rejet silencieux du fichier."
+    },
+    "templateId": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$",
+      "description": "Identifiant unique, stable et en kebab-case. C'est la clé primaire du catalogue (conflit = écrasement silencieux)."
+    },
+    "displayName": {
+      "type": "string",
+      "minLength": 3,
+      "description": "Nom affiché dans le catalogue (français)."
+    },
+    "category": {
+      "type": "string",
+      "minLength": 2,
+      "description": "Catégorie d'affichage : Sécurité, Restrictions, Périphériques, Réseau, Audit, Internet, Mise à jour…"
+    },
+    "description": {
+      "type": "string",
+      "minLength": 10,
+      "description": "Description du modèle (quoi et pourquoi)."
+    },
+    "expectedEffect": {
+      "type": "string",
+      "minLength": 10,
+      "description": "Effet observable attendu sur les postes/utilisateurs ciblés après application."
+    },
+    "scope": {
+      "enum": ["Computer", "User"],
+      "description": "Configuration ordinateur (HKLM) ou configuration utilisateur (HKCU)."
+    },
+    "riskLevel": {
+      "enum": ["Low", "Medium", "High"],
+      "description": "Niveau de risque opérationnel si la stratégie est appliquée sans analyse."
+    },
+    "supportedClients": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "type": "string" },
+      "description": "Versions de Windows prises en charge (ex. « Windows 10 », « Windows 11 », « Windows Server 2019 »)."
+    },
+    "requirements": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Prérequis (fichiers ADMX, licence, rôle, module…). Vide si aucun."
+    },
+    "parameters": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/parameter" },
+      "description": "Paramètres à renseigner au déploiement. Vide si le modèle est sans paramètre."
+    },
+    "warnings": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Avertissements opérationnels affichés avant déploiement."
+    },
+    "supportStatus": {
+      "enum": ["Available", "MissingPrerequisite", "NotSupported", "ComingSoon"],
+      "description": "Seuls les modèles « Available » sont déployables et voient leurs paramètres validés."
+    },
+    "supportNote": {
+      "type": ["string", "null"],
+      "description": "Preuve technique : chemin de stratégie exact au format X:\\...\\Cle!Valeur (HKLM ou HKCU). Obligatoire pour « Available »."
+    }
+  },
+  "$defs": {
+    "parameter": {
+      "type": "object",
+      "required": ["name", "displayName", "type", "description", "isRequired"],
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "type": "string",
+          "pattern": "^[a-zA-Z][a-zA-Z0-9]*$",
+          "description": "Nom technique du paramètre (clé de dictionnaire, sans espace)."
+        },
+        "displayName": {
+          "type": "string",
+          "minLength": 3,
+          "description": "Libellé affiché dans l'assistant."
+        },
+        "type": {
+          "enum": ["Text", "MultilineText", "Integer", "Boolean", "Enum"],
+          "description": "Type de saisie (TemplateParameterType)."
+        },
+        "description": {
+          "type": "string",
+          "minLength": 5,
+          "description": "Aide contextuelle du paramètre, incluant les valeurs acceptées et la valeur recommandée."
+        },
+        "isRequired": {
+          "type": "boolean",
+          "description": "Un paramètre requis absent ou vide bloque la validation."
+        },
+        "defaultValue": {
+          "type": "string",
+          "description": "Valeur préremplie (représentation textuelle)."
+        },
+        "placeholder": {
+          "type": "string",
+          "description": "Texte d'exemple affiché dans la zone de saisie."
+        },
+        "enumValues": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string" },
+          "description": "Valeurs autorisées, obligatoire et non vide pour type = Enum. La comparaison ignore la casse."
+        }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "type": { "const": "Enum" } } },
+          "then": { "required": ["enumValues"] }
+        }
+      ]
+    }
+  }
+}

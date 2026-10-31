@@ -1,0 +1,47 @@
+{
+  "schemaVersion": 1,
+  "templateId": "browser-url-blocklist",
+  "displayName": "Blocage et autorisation de sites Web (Edge / Chrome)",
+  "category": "Internet",
+  "description": "Bloque ou autorise des sites Web dans Microsoft Edge et/ou Google Chrome via les listes de stratégie URLBlocklist / URLAllowlist.",
+  "expectedEffect": "Les navigateurs configurés refusent l'accès aux URL bloquées et autorisent les exceptions. Les URL sont comparées au début de l'adresse (préfixe) ; les entrées se terminant par * couvrent un chemin complet.",
+  "scope": "Computer",
+  "riskLevel": "Low",
+  "supportedClients": ["Windows 10", "Windows 11"],
+  "requirements": [
+    "Modèles d'administration Edge (MSEdge.admx/adml) — inclus avec Windows ou Edge",
+    "Modèles d'administration Google Chrome (GoogleChrome.admx/adml) — à placer dans le magasin central ADMX si non présents"
+  ],
+  "parameters": [
+    {
+      "name": "browser",
+      "displayName": "Navigateur concerné",
+      "type": "Enum",
+      "description": "Applique la stratégie à Microsoft Edge, à Google Chrome, ou aux deux.",
+      "isRequired": true,
+      "enumValues": ["Edge", "Chrome", "Les deux"]
+    },
+    {
+      "name": "blockedUrls",
+      "displayName": "URL bloquées",
+      "type": "MultilineText",
+      "description": "Une URL par ligne. Ex. : https://*.example.com/* ou https://www.site.com/path",
+      "isRequired": true,
+      "placeholder": "https://*.exemple.com/*"
+    },
+    {
+      "name": "allowedUrls",
+      "displayName": "Exceptions autorisées",
+      "type": "MultilineText",
+      "description": "Une URL par ligne. Les exceptions sont évaluées avant les blocages.",
+      "isRequired": false,
+      "placeholder": "https://www.exemple.com/autorise/*"
+    }
+  ],
+  "warnings": [
+    "Ce blocage est un contrôle du navigateur visé, pas un filtre réseau universel : il n'affecte ni les autres navigateurs, ni les applications, ni les navigateurs portables.",
+    "Pour interdire un domaine à tout le parc, un filtrage DNS, proxy ou réseau reste nécessaire en complément."
+  ],
+  "supportStatus": "Available",
+  "supportNote": "Politiques actuelles URLBlocklist / URLAllowlist (la politique URLBlacklist est dépréciée et n'est pas utilisée)."
+}

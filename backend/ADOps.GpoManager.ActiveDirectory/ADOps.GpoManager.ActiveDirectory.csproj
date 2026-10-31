@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <RootNamespace>ADOps.GpoManager.ActiveDirectory</RootNamespace>
+    <Description>Lecture de l'inventaire AD DS (OU, ordinateurs, GPO, liens), disponibilité des postes et résultats GPO.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\ADOps.GpoManager.Core\ADOps.GpoManager.Core.csproj" />
+    <ProjectReference Include="..\ADOps.GpoManager.PowerShell\ADOps.GpoManager.PowerShell.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="ADOps.GpoManager.Tests" />
+  </ItemGroup>
+
+</Project>

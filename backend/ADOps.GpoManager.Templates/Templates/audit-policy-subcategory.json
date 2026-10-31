@@ -1,0 +1,29 @@
+{
+  "schemaVersion": 1,
+  "templateId": "audit-policy-subcategory",
+  "displayName": "Audit avancé — forçage des sous-catégories",
+  "category": "Audit",
+  "description": "Force les paramètres d'audit par sous-catégorie (Advanced Audit Policy) à prévaloir sur les anciennes catégories d'audit — prérequis obligatoire de toute politique d'audit Windows moderne, complété par les règles auditpol documentées.",
+  "expectedEffect": "Les anciens réglages d'audit par catégorie (auditpol legacy, LocalGpt) ne peuvent plus écraser la politique d'audit fine du domaine ; les journaux de sécurité reflètent fidèlement les sous-catégories définies (connexions, gestion des comptes, création de processus…).",
+  "scope": "Computer",
+  "riskLevel": "Low",
+  "supportedClients": ["Windows 10", "Windows 11", "Windows Server 2016+"],
+  "requirements": [
+    "Définir les sous-catégories d'audit effective par GPO (Paramètres Windows > Paramètres de sécurité > Configuration avancée de la stratégie d'audit) ou par auditpol.exe — voir docs/03-SecurityHardening.md pour la base recommandée"
+  ],
+  "parameters": [
+    {
+      "name": "enableSubcategoryOverride",
+      "displayName": "Forcer la prévalence des sous-catégories",
+      "type": "Boolean",
+      "description": "Vrai pour activer « Audit : Forcer les paramètres de stratégie d'audit des sous-catégories à prévaloir » (SCENoApplyLegacyAuditPolicy=1).",
+      "isRequired": true
+    }
+  ],
+  "warnings": [
+    "Ce réglage ne définit PAS à lui seul les événements audités : sans sous-catégories configurées, l'audit effectif peut être vide. L'accompagner impérativement de la configuration avancée de la stratégie d'audit.",
+    "Un volume d'événements de sécurité élevé (création de processus notamment) dimensionne la taille des journaux : ajuster la rétention (Stratégie d'événements) et la collecte (collecteur d'événements/SIEM)."
+  ],
+  "supportStatus": "Available",
+  "supportNote": "Chemin vérifié : HKLM\\SYSTEM\\CurrentControlSet\\Control\\Lsa!SCENoApplyLegacyAuditPolicy=1 (stratégie « Audit : Forcer les paramètres de stratégie d'audit des sous-catégories »). Les sous-catégories elles-mêmes (Logon/Logoff, Account Management, Process Creation 4688…) ne sont pas des valeurs de Registre : elles se configurent via la stratégie d'audit avancée ou auditpol.exe /set /subcategory:… — procédure complète dans docs/03-SecurityHardening.md."
+}

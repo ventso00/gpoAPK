@@ -1,0 +1,76 @@
+# ─── .NET / MSBuild ───────────────────────────────────────────────
+bin/
+obj/
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+[Aa][Rr][Mm]/
+artifacts/
+*.rsuser
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# ─── Sorties de build ─────────────────────────────────────────────
+*.dll
+*.exe
+*.pdb
+*.cache
+*.log
+*.tlog
+*.lastbuildstate
+project.lock.json
+project.fragment.lock.json
+
+# ─── Publication / livrables ──────────────────────────────────────
+publish/
+# (le dossier publish/ est régénéré par publish.bat ; l'archive se reconstruit)
+ADOps-GPO-Manager-livre.zip
+*.zip
+
+# ─── Visual Studio / Rider / VS Code ──────────────────────────────
+.vs/
+.idea/
+*.swp
+*.VC.db
+*.VC.VC.opendb
+*.vsssproj
+
+# ─── NuGet ────────────────────────────────────────────────────────
+packages/
+*.nupkg
+*.snupkg
+.nuget/
+
+# ─── Secrets / environnement (jamais commités) ────────────────────
+.env
+.env.*
+*.env
+*.pfx
+*.key
+appsettings.Secrets.json
+secrets.json
+credentials.json
+
+# ─── Données locales d'exécution ──────────────────────────────────
+logs/
+*.adops.log
+data/*.db
+data/*.sqlite
+*.db
+*.sqlite
+
+# ─── Résidus divers ───────────────────────────────────────────────
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+*.tmp
+*.bak
+full-project-access-request.json
+
+# ─── Artefacts d'agent / sortie (jamais commités) ─────────────────
+.manus/
+outputs/

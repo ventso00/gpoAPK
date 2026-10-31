@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <RootNamespace>ADOps.GpoManager.PowerShell</RootNamespace>
+    <Description>Exécution de commandes PowerShell typées (locale et WinRM) et analyse des résultats.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\ADOps.GpoManager.Core\ADOps.GpoManager.Core.csproj" />
+    <PackageReference Include="System.Security.Cryptography.ProtectedData" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- La détection du motif de repli HTTPS → HTTP est interne : elle est
+         vérifiée directement par la suite de tests pour garantir qu'un échec
+         métier ne soit jamais rejoué en clair. -->
+    <InternalsVisibleTo Include="ADOps.GpoManager.Tests" />
+  </ItemGroup>
+
+</Project>

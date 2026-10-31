@@ -1,0 +1,31 @@
+{
+  "schemaVersion": 1,
+  "templateId": "screensaver-lock",
+  "displayName": "Verrouillage automatique par écran de veille",
+  "category": "Sécurité",
+  "description": "Active l'écran de veille avec mot de passe et impose un délai d'inactivité maximal avant verrouillage de la session utilisateur.",
+  "expectedEffect": "Toute session inactive pendant la durée configurée est verrouillée automatiquement ; l'utilisateur doit se réauthentifier pour la reprendre.",
+  "scope": "User",
+  "riskLevel": "Low",
+  "supportedClients": ["Windows 10", "Windows 11"],
+  "requirements": [
+    "Aucun prérequis : stratégies natives de la section Panneau de configuration (Desktop)"
+  ],
+  "parameters": [
+    {
+      "name": "timeoutSeconds",
+      "displayName": "Délai d'inactivité avant verrouillage (secondes)",
+      "type": "Integer",
+      "description": "Durée d'inactivité (en secondes) après laquelle la session est verrouillée. Plage applicable : 1 à 86400. Valeur recommandée : 600 (10 minutes), alignée sur les référentiels ANSSI et CIS.",
+      "isRequired": true,
+      "defaultValue": "600",
+      "placeholder": "600"
+    }
+  ],
+  "warnings": [
+    "Un délai trop court (moins de 2 minutes) peut perturber les utilisateurs lors des démonstrations ou partages d'écran.",
+    "Le verrouillage s'applique à toutes les sessions interactives ciblées par la GPO, y compris les comptes administrateur si la GPO leur est liée."
+  ],
+  "supportStatus": "Available",
+  "supportNote": "Chemins vérifiés : HKCU\\Software\\Policies\\Microsoft\\Windows\\Control Panel\\Desktop!ScreenSaveActive=\"1\", !ScreenSaverIsSecure=\"1\", !ScreenSaveTimeOut=\"<timeoutSeconds>\" (Configuration utilisateur)."
+}

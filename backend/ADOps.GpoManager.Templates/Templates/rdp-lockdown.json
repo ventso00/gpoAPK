@@ -1,0 +1,32 @@
+{
+  "schemaVersion": 1,
+  "templateId": "rdp-lockdown",
+  "displayName": "Verrouillage du Bureau à distance (RDP)",
+  "category": "Réseau",
+  "description": "Désactive entièrement le Bureau à distance sur les postes de travail, ou le limite à l'authentification au niveau du réseau (NLA) lorsque l'accès distant est requis.",
+  "expectedEffect": "En mode Désactivé : aucun accès RDP entrant possible sur les postes ciblés (surface d'attaque réduite, pas d'exposition à BlueKeep). En mode NLA requis : seuls les clients effectuant l'authentification NLA avant l'ouverture de session peuvent se connecter.",
+  "scope": "Computer",
+  "riskLevel": "Medium",
+  "supportedClients": ["Windows 10", "Windows 11"],
+  "requirements": [
+    "Vérifier qu'aucun processus de support (intervention à distance, inventaire) ne dépend de RDP avant le mode Désactivé",
+    "Mode NLA : les clients RDP utilisés doivent prendre en charge CredSSP (tous les clients récents)"
+  ],
+  "parameters": [
+    {
+      "name": "mode",
+      "displayName": "Mode RDP",
+      "type": "Enum",
+      "description": "Désactivé : RDP refusé (fDenyTSConnections=1, recommandé pour un poste de travail standard). NLA requis : RDP actif mais uniquement avec authentification préalable au niveau du réseau (fDenyTSConnections=0 + UserAuthentication=1).",
+      "isRequired": true,
+      "enumValues": ["Désactivé", "NLA requis"]
+    }
+  ],
+  "warnings": [
+    "Le mode Désactivé coupe tout accès d'assistance basé sur RDP (RMM, Shadow session) : prévoir un canal alternatif avant déploiement.",
+    "En mode NLA requis, un compte avec mot de passe vide ne peut plus se connecter en RDP (comportement souhaité).",
+    "RDP désactivé au niveau stratégie n'ouvre pas le port 3389 si le pare-feu le bloque déjà : les deux modèles se complètent (voir windows-defender-firewall)."
+  ],
+  "supportStatus": "Available",
+  "supportNote": "Chemins vérifiés : HKLM\\SYSTEM\\CurrentControlSet\\Control\\Terminal Server!fDenyTSConnections (DWORD 1 = désactivé) et HKLM\\SYSTEM\\CurrentControlSet\\Control\\Terminal Server\\WinStations\\RDP-Tcp!UserAuthentication=1 (NLA obligatoire) — stratégies « Autoriser les utilisateurs à se connecter à distance » et « Exiger l'authentification NLA »."
+}

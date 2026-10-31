@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <RootNamespace>ADOps.GpoManager.Infrastructure</RootNamespace>
+    <Description>Journalisation fichier avec rotation, stockage SQLite, synchronisation d'inventaire et configuration pour ADOps GPO Manager.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\ADOps.GpoManager.Core\ADOps.GpoManager.Core.csproj" />
+    <ProjectReference Include="..\ADOps.GpoManager.ActiveDirectory\ADOps.GpoManager.ActiveDirectory.csproj" />
+    <PackageReference Include="Microsoft.Data.Sqlite" />
+  </ItemGroup>
+
+</Project>

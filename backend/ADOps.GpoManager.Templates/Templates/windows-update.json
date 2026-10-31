@@ -1,0 +1,54 @@
+{
+  "schemaVersion": 1,
+  "templateId": "windows-update",
+  "displayName": "Windows Update (Windows Update ou WSUS)",
+  "category": "Mise à jour",
+  "description": "Configure le mode de mise à jour : Windows Update par défaut, ou WSUS avec l'URL du serveur de mise à jour.",
+  "expectedEffect": "Les postes ciblés utilisent le serveur et le mode de mise à jour choisis. Un redémarrage est probablement requis pour l'application complète des paramètres.",
+  "scope": "Computer",
+  "riskLevel": "Medium",
+  "supportedClients": ["Windows 10", "Windows 11"],
+  "requirements": [
+    "En mode WSUS : un serveur WSUS réellement disponible et son URL exacte (l'application ne l'invente pas)"
+  ],
+  "parameters": [
+    {
+      "name": "mode",
+      "displayName": "Mode de mise à jour",
+      "type": "Enum",
+      "description": "Windows Update (par défaut) ou WSUS (serveur d'entreprise).",
+      "isRequired": true,
+      "enumValues": ["Windows Update", "WSUS"]
+    },
+    {
+      "name": "wuServerUrl",
+      "displayName": "URL du serveur WSUS",
+      "type": "Text",
+      "description": "Ex. : http://wsus.ventso.test:8530 — requise uniquement en mode WSUS.",
+      "isRequired": false,
+      "placeholder": "http://wsus.exemple.local:8530"
+    },
+    {
+      "name": "wuStatusServerUrl",
+      "displayName": "URL du serveur de statistiques WSUS",
+      "type": "Text",
+      "description": "Ex. : http://wsus.ventso.test:8530 — requise uniquement en mode WSUS.",
+      "isRequired": false,
+      "placeholder": "http://wsus.exemple.local:8530"
+    },
+    {
+      "name": "auOptions",
+      "displayName": "Options de mise à jour automatique",
+      "type": "Enum",
+      "description": "2 : avertir avant le téléchargement. 3 : télécharger automatiquement et avertir pour l'installation. 4 : télécharger et installer selon la planification.",
+      "isRequired": false,
+      "enumValues": ["2", "3", "4"]
+    }
+  ],
+  "warnings": [
+    "En mode WSUS, les deux URL (intranet de mise à jour et de statistiques) doivent être fournies et le service doit être réellement disponible.",
+    "Un redémarrage est probablement requis pour que tous les réglages soient pris en compte."
+  ],
+  "supportStatus": "Available",
+  "supportNote": "Chemins vérifiés : HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\WindowsUpdate\\WUServer, WUStatusServer, et ...\\WindowsUpdate\\AU\\AUOptions."
+}

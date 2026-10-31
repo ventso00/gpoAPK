@@ -1,0 +1,32 @@
+{
+  "schemaVersion": 1,
+  "templateId": "powershell-execution-policy",
+  "displayName": "Politique d'exécution des scripts PowerShell",
+  "category": "Restrictions",
+  "description": "Contrôle l'exécution des scripts PowerShell au niveau machine via la stratégie « Activer l'exécution des scripts » (PowerShellExecutionPolicy.admx) : désactivation totale, signature obligatoire ou signature distante requise.",
+  "expectedEffect": "Les scripts PowerShell non signés (ou tous les scripts en cas de désactivation) refusent de s'exécuter sur les postes ciblés, quelle que soit la politique définie localement (Set-ExecutionPolicy est neutralisé par la stratégie).",
+  "scope": "Computer",
+  "riskLevel": "High",
+  "supportedClients": ["Windows 10", "Windows 11"],
+  "requirements": [
+    "Aucun prérequis ADMX (stratégie native Windows PowerShell)",
+    "Inventorier les scripts métier avant tout durcissement : les outils de déploiement utilisant des scripts non signés seront bloqués"
+  ],
+  "parameters": [
+    {
+      "name": "executionPolicy",
+      "displayName": "Politique d'exécution",
+      "type": "Enum",
+      "description": "Désactivé : aucun script PowerShell ne s'exécute (EnableScripts=0). AllSigned : seuls les scripts signés par une autorité de confiance s'exécutent (recommandé). RemoteSigned : scripts locaux autorisés, scripts téléchargés signés obligatoirement. Unrestricted : tout s'exécute (à éviter).",
+      "isRequired": true,
+      "enumValues": ["Désactivé", "AllSigned", "RemoteSigned", "Unrestricted"]
+    }
+  ],
+  "warnings": [
+    "AllSigned exige une chaîne de signature de code opérationnelle (certificat + publication des autorités dans le magasin des ordinateurs cibles) : sinon les outils de gestion seront bloqués.",
+    "La politique machine s'applique aussi aux comptes d'administration locaux du poste.",
+    "Le mode « Désactivé » peut casser des agents ou logiciels de télémétrie s'appuyant sur des scripts PowerShell."
+  ],
+  "supportStatus": "Available",
+  "supportNote": "Chemins vérifiés : HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\PowerShell!EnableScripts (DWORD 0 ou 1) et !ExecutionPolicy (SZ : AllSigned / RemoteSigned / Restricted / Unrestricted) — stratégie « Turn on Script Execution »."
+}

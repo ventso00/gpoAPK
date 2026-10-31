@@ -1,0 +1,116 @@
+<UserControl x:Class="ADOps.GpoManager.App.Views.ParcView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <Grid Margin="24">
+        <DockPanel>
+
+            <!-- En-tête + actions -->
+            <StackPanel DockPanel.Dock="Top">
+                <TextBlock Text="Parc informatique" Style="{StaticResource PageTitleStyle}" />
+                <TextBlock Text="Ordinateurs lus dans AD DS, regroupés par départements. Les tests de disponibilité utilisent DNS et WinRM — jamais un simple ping." Style="{StaticResource PageSubtitleStyle}" />
+
+                <Border Style="{StaticResource CardStyle}" Margin="0,12,0,0" Padding="12">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="2*" />
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+
+                        <StackPanel Grid.Column="0">
+                            <TextBlock Text="RECHERCHE (nom, DN)" Style="{StaticResource FieldLabelStyle}" />
+                            <TextBox Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource InputStyle}" Margin="0,4,0,0" />
+                        </StackPanel>
+
+                        <Button Grid.Column="1" Content="Actualiser" Style="{StaticResource PrimaryButtonStyle}" Command="{Binding LoadDataCommand}" Margin="12,0,0,0" />
+                        <Button Grid.Column="2" Content="Vérifier la disponibilité" Style="{StaticResource PrimaryButtonStyle}" Command="{Binding CheckAvailabilityCommand}" Margin="8,0,0,0" />
+                        <Button Grid.Column="3" Content="Synchroniser" Style="{StaticResource PrimaryButtonStyle}" Command="{Binding SynchronizeCommand}" Margin="8,0,0,0" />
+                        <Button Grid.Column="4" Content="Mapper les départements" Style="{StaticResource PrimaryButtonStyle}" Command="{Binding OpenDepartmentMappingCommand}" Margin="8,0,0,0" />
+                    </Grid>
+                </Border>
+
+                <!-- Message d'état explicite -->
+                <Border Margin="0,12,0,0" Padding="12" CornerRadius="8"
+                        Background="{DynamicResource CardBackgroundBrush}"
+                        BorderThickness="1"
+                        BorderBrush="{DynamicResource BorderBrush}"
+                        Visibility="{Binding ShowStatus, Converter={StaticResource BooleanToVisibilityConverter}}">
+                    <TextBlock Text="{Binding StatusMessage}" TextWrapping="Wrap">
+                        <TextBlock.Style>
+                            <Style TargetType="TextBlock" BasedOn="{StaticResource BodyStyle}">
+                                <Setter Property="Foreground" Value="{DynamicResource SuccessBrush}" />
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsStatusError}" Value="True">
+                                        <Setter Property="Foreground" Value="{DynamicResource DangerBrush}" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </TextBlock.Style>
+                    </TextBlock>
+                </Border>
+            </StackPanel>
+
+            <Grid Margin="0,12,0,0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="250" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+
+                <!-- Filtres latéraux : départements + disponibilité -->
+                <Border Grid.Column="0" Style="{StaticResource CardStyle}" Margin="0,0,12,0">
+                    <StackPanel>
+                        <TextBlock Text="DÉPARTEMENTS" Style="{StaticResource FieldLabelStyle}" />
+                        <ListBox ItemsSource="{Binding Departments}"
+                                 SelectedValue="{Binding SelectedDepartment}"
+                                 SelectedValuePath="DepartmentName"
+                                 DisplayMemberPath="DepartmentName"
+                                 Margin="0,8,0,0"
+                                 Style="{StaticResource ListBoxStyle}" />
+
+                        <TextBlock Text="DISPONIBILITÉ" Style="{StaticResource FieldLabelStyle}" Margin="0,16,0,0" />
+                        <ComboBox ItemsSource="{Binding AvailabilityFilters}"
+                                  SelectedItem="{Binding SelectedAvailability}"
+                                  IsEditable="False"
+                                  Margin="0,8,0,0"
+                                  Style="{StaticResource ComboBoxStyle}" />
+
+                        <TextBlock Margin="0,16,0,0" Style="{StaticResource CaptionStyle}" TextWrapping="Wrap"
+                                   Text="Les départements sont définis localement (mapping département ↔ OU). AD DS n'est jamais modifié." />
+                    </StackPanel>
+                </Border>
+
+                <!-- Tableau d'ordinateurs -->
+                <Border Grid.Column="1" Style="{StaticResource CardStyle}" Padding="0">
+                    <StackPanel>
+                        <TextBlock Text="{Binding ComputerCountText}" Style="{StaticResource FieldLabelStyle}" Margin="16,14,16,0" />
+                        <DataGrid ItemsSource="{Binding Computers}"
+                                  SelectedItem="{Binding SelectedComputer}"
+                                  AutoGenerateColumns="False"
+                                  IsReadOnly="True"
+                                  CanUserAddRows="False"
+                                  SelectionMode="Single"
+                                  MouseDoubleClick="OnComputerDoubleClick"
+                                  Style="{StaticResource DataGridStyle}"
+                                  Margin="0,8,0,0">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="Nom" Binding="{Binding Name}" Width="1.4*" />
+                                <DataGridTextColumn Header="Département" Binding="{Binding DepartmentName, TargetNullValue='Non classé'}" Width="1.2*" />
+                                <DataGridTextColumn Header="OU" Binding="{Binding OuName, TargetNullValue='—'}" Width="1.6*" />
+                                <DataGridTextColumn Header="Système" Binding="{Binding OperatingSystem, TargetNullValue='—'}" Width="1.6*" />
+                                <DataGridTextColumn Header="Disponibilité" Binding="{Binding AvailabilityText}" Width="1.8*" />
+                                <DataGridTextColumn Header="IP" Binding="{Binding DnsIpAddress, TargetNullValue='—'}" Width="0.9*" />
+                                <DataGridCheckBoxColumn Header="Activé" Binding="{Binding Enabled}" Width="0.7*" />
+                                <DataGridTextColumn Header="Dernière ouverture de session" Binding="{Binding LastLogonUtc, StringFormat='{}{0:yyyy-MM-dd HH:mm}', TargetNullValue='Jamais'}" Width="1.5*" />
+                            </DataGrid.Columns>
+                        </DataGrid>
+                        <TextBlock Style="{StaticResource HintStyle}" Margin="16,8,16,12"
+                                   Text="Double-cliquez un ordinateur pour ouvrir sa fiche (GPO prévues, résultat effectif, diagnostic)." />
+                    </StackPanel>
+                </Border>
+            </Grid>
+
+        </DockPanel>
+    </Grid>
+</UserControl>

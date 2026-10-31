@@ -1,0 +1,38 @@
+{
+  "schemaVersion": 1,
+  "templateId": "uac-hardening",
+  "displayName": "Renforcement du contrôle de compte d'utilisateur (UAC)",
+  "category": "Sécurité",
+  "description": "Applique les réglages UAC recommandés par les référentiels CIS/Microsoft : UAC actif, invites des administrateurs sur le bureau sécurisé, refus automatique des élévations pour les utilisateurs standards.",
+  "expectedEffect": "Toute élévation de privilèges déclenche une invite affichée sur le bureau sécurisé (impossible à capturer par un logiciel de l'utilisateur) ; les utilisateurs standards ne peuvent pas saisir d'identifiants d'administrateur dans les invites d'élévation.",
+  "scope": "Computer",
+  "riskLevel": "Medium",
+  "supportedClients": ["Windows 10", "Windows 11"],
+  "requirements": [
+    "Aucun prérequis ADMX (stratégies natives System)"
+  ],
+  "parameters": [
+    {
+      "name": "secureDesktop",
+      "displayName": "Invites sur le bureau sécurisé",
+      "type": "Boolean",
+      "description": "Vrai pour afficher les invites d'élévation sur le bureau sécurisé (PromptOnSecureDesktop=1, recommandé CIS).",
+      "isRequired": true
+    },
+    {
+      "name": "standardUserBehavior",
+      "displayName": "Comportement pour les utilisateurs standards",
+      "type": "Enum",
+      "description": "Refuser automatiquement les demandes d'élévation (valeur 0, recommandé CIS) ou demander les informations d'identification d'un administrateur (valeur 3).",
+      "isRequired": true,
+      "enumValues": ["Refuser automatiquement", "Demander les informations d'identification"]
+    }
+  ],
+  "warnings": [
+    "Le refus automatique (recommandé) empêche un utilisateur standard d'élever des privilèges même en connaissant un mot de passe d'administrateur : coordonner avec le support informatique.",
+    "L'administrateur reçoit une invite « consentement sur bureau sécurisé » (ConsentPromptBehaviorAdmin=2, valeur CIS figée par ce modèle).",
+    "EnableLUA reste forcé à 1 : un poste où UAC aurait été désactivé localement est remis en conformité."
+  ],
+  "supportStatus": "Available",
+  "supportNote": "Chemins vérifiés : HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\System!EnableLUA=1, !ConsentPromptBehaviorAdmin=2, !PromptOnSecureDesktop=1, !ConsentPromptBehaviorUser=0 (ou 3) — stratégies « Contrôle de compte d'utilisateur »."
+}

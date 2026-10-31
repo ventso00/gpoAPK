@@ -1,0 +1,378 @@
+<UserControl x:Class="ADOps.GpoManager.App.Views.SettingsView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:controls="clr-namespace:ADOps.GpoManager.App.Controls"
+             FontFamily="{StaticResource AppFontFamily}">
+    <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="{StaticResource PagePadding}">
+        <StackPanel MaxWidth="880" HorizontalAlignment="Center">
+
+            <StackPanel Orientation="Horizontal">
+                <Border Width="34" Height="34" CornerRadius="10" VerticalAlignment="Center"
+                        Background="{DynamicResource AccentSoftBrush}"
+                        BorderBrush="{DynamicResource AccentBorderBrush}" BorderThickness="1">
+                    <controls:LucideIcon Icon="Settings" Width="18" Height="18" Stroke="{DynamicResource AccentBrush}" />
+                </Border>
+                <StackPanel VerticalAlignment="Center" Margin="12,0,0,0">
+                    <TextBlock Text="Paramètres et session" Style="{StaticResource PageTitleStyle}" Margin="0" />
+                    <TextBlock Text="Cible du domaine, canal distant, synchronisation, journalisation"
+                               Style="{StaticResource CaptionStyle}" Margin="0,3,0,0" />
+                </StackPanel>
+            </StackPanel>
+            <TextBlock Text="Paramètres applicatifs et journalisation. L'identité employée est celle de la session Windows courante : aucun mot de passe n'est stocké." Style="{StaticResource PageSubtitleStyle}" />
+
+            <!-- Connexion actuelle -->
+            <Border Style="{StaticResource CardStyle}" Margin="0,16,0,0">
+                <StackPanel>
+                    <StackPanel Orientation="Horizontal">
+                        <controls:LucideIcon Icon="Wifi" Width="14" Height="14"
+                                             Stroke="{DynamicResource TextTertiaryBrush}" Margin="0,1,7,0" />
+                        <TextBlock Text="CONNEXION ACTUELLE" Style="{StaticResource FieldLabelStyle}" />
+                    </StackPanel>
+
+
+                    <Grid Margin="0,12,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition />
+                            <RowDefinition />
+                            <RowDefinition />
+                            <RowDefinition />
+                        </Grid.RowDefinitions>
+
+                        <TextBlock Grid.Row="0" Grid.Column="0" Text="Serveur" Style="{StaticResource CaptionStyle}" />
+                        <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding ConnectionServer}" Style="{StaticResource BodyStyle}" Margin="12,0,0,0" />
+
+                        <TextBlock Grid.Row="1" Grid.Column="0" Text="Domaine" Style="{StaticResource CaptionStyle}" />
+                        <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding ConnectionDomain}" Style="{StaticResource BodyStyle}" Margin="12,0,0,0" />
+
+                        <TextBlock Grid.Row="2" Grid.Column="0" Text="Mode d'exécution" Style="{StaticResource CaptionStyle}" />
+                        <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding ConnectionMode}" Style="{StaticResource BodyStyle}" Margin="12,0,0,0" />
+
+                        <TextBlock Grid.Row="3" Grid.Column="0" Text="Compte utilisé" Style="{StaticResource CaptionStyle}" />
+                        <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding ConnectionAccount}" Style="{StaticResource BodyStyle}" Margin="12,0,0,0" />
+                    </Grid>
+
+                    <StackPanel Orientation="Horizontal" Margin="0,14,0,0">
+                        <Button Style="{StaticResource PrimaryButtonStyle}" Command="{Binding RedetectSessionCommand}">
+                            <StackPanel Orientation="Horizontal">
+                                <controls:LucideIcon Icon="RefreshCw" Width="13" Height="13" />
+                                <TextBlock Text="Rejouer la détection de session" Margin="6,0,0,0" VerticalAlignment="Center" />
+                            </StackPanel>
+                        </Button>
+                    </StackPanel>
+                    <TextBlock Text="L'application travaille avec la session Windows courante (compte de l'administrateur connecté) : aucun identifiant n'est saisi ni stocké. Le bouton ci-dessus relance la détection du domaine et du contrôleur, utile après un changement de réseau ou l'octroi de nouveaux droits." Style="{StaticResource HintStyle}" />
+                </StackPanel>
+            </Border>
+
+            <!-- Cible du domaine (contrôleur + domaine) -->
+            <Border Style="{StaticResource CardStyle}" Margin="0,12,0,0">
+                <StackPanel>
+                    <StackPanel Orientation="Horizontal">
+                        <controls:LucideIcon Icon="Server" Width="14" Height="14"
+                                             Stroke="{DynamicResource TextTertiaryBrush}" Margin="0,1,7,0" />
+                        <TextBlock Text="CIBLE DU DOMAINE" Style="{StaticResource FieldLabelStyle}" />
+                    </StackPanel>
+
+
+                    <TextBlock Style="{StaticResource HintStyle}" Margin="0,8,0,0" TextWrapping="Wrap"
+                               Text="Ces valeurs priment sur la détection automatique : elles garantissent que la synchronisation porte sur le contrôleur voulu. Le FQDN est préférable (Kerberos exige le SPN « HTTP/&lt;fqdn&gt; ») ; l'adresse IP sert de repli lorsque le DNS de la VM ne résout pas le nom." />
+
+                    <Grid Margin="0,12,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition />
+                            <RowDefinition />
+                        </Grid.RowDefinitions>
+
+                        <StackPanel Grid.Row="0" Grid.Column="0" Margin="0,0,8,0">
+                            <TextBlock Text="CONTRÔLEUR (FQDN)" Style="{StaticResource FieldLabelStyle}" />
+                            <TextBox Text="{Binding ServerFqdn, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource InputStyle}" Margin="0,4,0,0" />
+                        </StackPanel>
+
+                        <StackPanel Grid.Row="0" Grid.Column="1" Margin="8,0,0,0">
+                            <TextBlock Text="ADRESSE IP DU CONTRÔLEUR" Style="{StaticResource FieldLabelStyle}" />
+                            <TextBox Text="{Binding ServerAddress, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource InputStyle}" Margin="0,4,0,0" />
+                        </StackPanel>
+
+                        <StackPanel Grid.Row="1" Grid.Column="0" Margin="0,10,8,0">
+                            <TextBlock Text="DOMAINE (nom DNS)" Style="{StaticResource FieldLabelStyle}" />
+                            <TextBox Text="{Binding DomainFqdn, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource InputStyle}" Margin="0,4,0,0" />
+                        </StackPanel>
+
+                        <StackPanel Grid.Row="1" Grid.Column="1" Margin="8,10,0,0">
+                            <TextBlock Text="NETBIOS DU DOMAINE (facultatif)" Style="{StaticResource FieldLabelStyle}" />
+                            <TextBox Text="{Binding DomainNetbios, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource InputStyle}" Margin="0,4,0,0" />
+                        </StackPanel>
+                    </Grid>
+
+                    <Button Style="{StaticResource PrimaryButtonStyle}"
+                            Command="{Binding RedetectSessionCommand}"
+                            HorizontalAlignment="Left"
+                            Margin="0,12,0,0">
+                        <StackPanel Orientation="Horizontal">
+                            <controls:LucideIcon Icon="RefreshCw" Width="13" Height="13" />
+                            <TextBlock Text="Rejouer la détection de session avec cette cible" Margin="6,0,0,0" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </Button>
+                    <TextBlock Text="La détection recharge la cible ci-dessus, rejoue le contrôle de santé et relance la synchronisation. Utile après un changement de réseau ou l'octroi de nouveaux droits." Style="{StaticResource HintStyle}" />
+                </StackPanel>
+            </Border>
+
+            <!-- Canal WinRM (mode d'exécution distant) -->
+            <Border Style="{StaticResource CardStyle}" Margin="0,12,0,0">
+                <StackPanel>
+                    <StackPanel Orientation="Horizontal">
+                        <controls:LucideIcon Icon="Lock" Width="14" Height="14"
+                                             Stroke="{DynamicResource TextTertiaryBrush}" Margin="0,1,7,0" />
+                        <TextBlock Text="CANAL WINRM (MODE D'EXÉCUTION DISTANT)" Style="{StaticResource FieldLabelStyle}" />
+                    </StackPanel>
+
+
+                    <ComboBox Margin="0,10,0,0"
+                              MaxWidth="520" HorizontalAlignment="Left"
+                              ItemsSource="{Binding WinRmTransportChoices}"
+                              DisplayMemberPath="Label"
+                              SelectedValuePath="Value"
+                              SelectedValue="{Binding WinRmTransport, Mode=TwoWay}"
+                              Style="{StaticResource SelectStyle}" />
+
+                    <TextBlock Text="{Binding WinRmTransportDescription}" Style="{StaticResource HintStyle}" Margin="0,8,0,0" TextWrapping="Wrap" />
+
+                    <Border Margin="0,10,0,0" Padding="12,10" CornerRadius="8"
+                            Background="{DynamicResource WarningSoftBrush}"
+                            BorderThickness="1" BorderBrush="{DynamicResource WarningBorderBrush}"
+                            Visibility="{Binding IsWinRmTransportDowngrade, Converter={StaticResource BooleanToVisibilityConverter}}">
+                        <StackPanel Orientation="Horizontal">
+                            <controls:LucideIcon Icon="TriangleAlert" Width="14" Height="14"
+                                                 Stroke="{DynamicResource WarningBrush}"
+                                                 VerticalAlignment="Top" Margin="0,2,9,0" />
+                            <TextBlock MaxWidth="600" TextWrapping="Wrap"
+                                       Style="{StaticResource HintStyle}"
+                                       Foreground="{DynamicResource WarningBrush}">
+                                <Run Text="Canal non chiffré possible." />
+                                <Run Text="Les commandes et leurs résultats circuleront en clair sur le réseau du lab (port 5985). Acceptable sur un réseau de test isolé ; sur un réseau d'entreprise, créez un écouteur HTTPS avec un certificat de confiance et choisissez « HTTPS strict »." />
+                            </TextBlock>
+                        </StackPanel>
+                    </Border>
+
+                    <TextBlock Style="{StaticResource HintStyle}" Margin="0,10,0,0" TextWrapping="Wrap"
+                               Text="Sans effet en mode d'exécution local (RSAT) : ce réglage ne concerne que les commandes envoyées au contrôleur via Invoke-Command. Le changement est pris en compte au prochain test de connexion, sans redémarrage." />
+                </StackPanel>
+            </Border>
+
+            <!-- Synchronisation automatique -->
+            <Border Style="{StaticResource CardStyle}" Margin="0,12,0,0">
+                <StackPanel>
+                    <StackPanel Orientation="Horizontal">
+                        <controls:LucideIcon Icon="Clock" Width="14" Height="14"
+                                             Stroke="{DynamicResource TextTertiaryBrush}" Margin="0,1,7,0" />
+                        <TextBlock Text="SYNCHRONISATION AUTOMATIQUE DU PARC" Style="{StaticResource FieldLabelStyle}" />
+                    </StackPanel>
+
+
+                    <CheckBox IsChecked="{Binding AutoSyncEnabled}" Style="{StaticResource OptionStyle}" Margin="0,12,0,0">
+                        <StackPanel>
+                            <TextBlock Text="Synchroniser automatiquement l'inventaire AD DS" Style="{StaticResource BodyStrongStyle}" />
+                            <TextBlock Text="Actualise les OU, ordinateurs, GPO et liens depuis l'annuaire à intervalle régulier." Style="{StaticResource HintStyle}" />
+                        </StackPanel>
+                    </CheckBox>
+
+                    <TextBlock Text="INTERVALLE (MINUTES)" Style="{StaticResource FieldLabelStyle}" Margin="0,12,0,0" />
+                    <TextBox Text="{Binding SyncIntervalMinutes, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource InputStyle}" Margin="0,4,0,0" MaxWidth="200" HorizontalAlignment="Left" />
+                    <TextBlock Text="La première synchronisation reste toujours confirmée manuellement depuis le tableau de bord." Style="{StaticResource HintStyle}" />
+                </StackPanel>
+            </Border>
+
+            <!-- Journalisation -->
+            <Border Style="{StaticResource CardStyle}" Margin="0,12,0,0">
+                <StackPanel>
+                    <StackPanel Orientation="Horizontal">
+                        <controls:LucideIcon Icon="Notebook" Width="14" Height="14"
+                                             Stroke="{DynamicResource TextTertiaryBrush}" Margin="0,1,7,0" />
+                        <TextBlock Text="JOURNALISATION (ROTATION)" Style="{StaticResource FieldLabelStyle}" />
+                    </StackPanel>
+
+
+                    <TextBlock Text="TAILLE MAXIMALE DU JOURNAL (MO)" Style="{StaticResource FieldLabelStyle}" Margin="0,12,0,0" />
+                    <TextBox Text="{Binding LogMaxFileSizeMb, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource InputStyle}" Margin="0,4,0,0" MaxWidth="200" HorizontalAlignment="Left" />
+
+                    <TextBlock Text="JOURNAUX ARCHIVÉS CONSERVÉS" Style="{StaticResource FieldLabelStyle}" Margin="0,12,0,0" />
+                    <TextBox Text="{Binding LogFilesToKeep, UpdateSourceTrigger=PropertyChanged}" Style="{StaticResource InputStyle}" Margin="0,4,0,0" MaxWidth="200" HorizontalAlignment="Left" />
+                </StackPanel>
+            </Border>
+
+            <!-- Stockage local -->
+            <Border Style="{StaticResource CardStyle}" Margin="0,12,0,0">
+                <StackPanel>
+                    <StackPanel Orientation="Horizontal">
+                        <controls:LucideIcon Icon="Database" Width="14" Height="14"
+                                             Stroke="{DynamicResource TextTertiaryBrush}" Margin="0,1,7,0" />
+                        <TextBlock Text="STOCKAGE LOCAL" Style="{StaticResource FieldLabelStyle}" />
+                    </StackPanel>
+
+                    <TextBlock Text="Journaux :" Style="{StaticResource BodyStyle}" Margin="0,12,0,0" />
+                    <TextBlock Text="{Binding LogDirectory}" FontFamily="{StaticResource MonoFontFamily}" FontSize="11.5"
+                               Foreground="{DynamicResource TextSecondaryBrush}" TextWrapping="Wrap" Margin="0,2,0,0" />
+
+                    <TextBlock Text="Base d'audit (SQLite) :" Style="{StaticResource BodyStyle}" Margin="0,12,0,0" />
+                    <TextBlock Text="{Binding DatabaseFile}" FontFamily="{StaticResource MonoFontFamily}" FontSize="11.5"
+                               Foreground="{DynamicResource TextSecondaryBrush}" TextWrapping="Wrap" Margin="0,2,0,0" />
+
+                    <StackPanel Orientation="Horizontal" Margin="0,14,0,0">
+                        <Button Style="{StaticResource SecondaryButtonStyle}" Command="{Binding OpenLogFolderCommand}" Margin="0,0,8,0">
+                            <StackPanel Orientation="Horizontal">
+                                <controls:LucideIcon Icon="Folder" Width="13" Height="13" />
+                                <TextBlock Text="Ouvrir le dossier des journaux" Margin="6,0,0,0" VerticalAlignment="Center" />
+                            </StackPanel>
+                        </Button>
+                        <Button Style="{StaticResource SecondaryButtonStyle}" Command="{Binding OpenDataFolderCommand}">
+                            <StackPanel Orientation="Horizontal">
+                                <controls:LucideIcon Icon="Folder" Width="13" Height="13" />
+                                <TextBlock Text="Ouvrir le dossier de données" Margin="6,0,0,0" VerticalAlignment="Center" />
+                            </StackPanel>
+                        </Button>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+
+            <!-- Message d'état -->
+            <Border Margin="0,12,0,0" Padding="14" CornerRadius="10"
+                    Background="{DynamicResource CardBackgroundBrush}"
+                    BorderThickness="1"
+                    BorderBrush="{DynamicResource BorderBrush}"
+                    Visibility="{Binding ShowStatus, Converter={StaticResource BooleanToVisibilityConverter}}">
+                <StackPanel Orientation="Horizontal">
+                    <controls:LucideIcon Width="14" Height="14" VerticalAlignment="Top" Margin="0,2,9,0">
+                        <controls:LucideIcon.Style>
+                            <Style TargetType="controls:LucideIcon" BasedOn="{StaticResource {x:Type controls:LucideIcon}}">
+                                <Setter Property="Icon" Value="CircleCheck" />
+                                <Setter Property="Stroke" Value="{DynamicResource SuccessBrush}" />
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsStatusError}" Value="True">
+                                        <Setter Property="Icon" Value="CircleX" />
+                                        <Setter Property="Stroke" Value="{DynamicResource DangerBrush}" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </controls:LucideIcon.Style>
+                    </controls:LucideIcon>
+                    <TextBlock MaxWidth="620" Text="{Binding StatusMessage}" TextWrapping="Wrap">
+                        <TextBlock.Style>
+                            <Style TargetType="TextBlock" BasedOn="{StaticResource BodyStyle}">
+                                <Setter Property="Foreground" Value="{DynamicResource SuccessBrush}" />
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsStatusError}" Value="True">
+                                        <Setter Property="Foreground" Value="{DynamicResource DangerBrush}" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </TextBlock.Style>
+                    </TextBlock>
+                </StackPanel>
+            </Border>
+
+            <Button Style="{StaticResource PrimaryButtonStyle}"
+                    Command="{Binding SaveCommand}"
+                    HorizontalAlignment="Left"
+                    Margin="0,12,0,0">
+                <StackPanel Orientation="Horizontal">
+                    <controls:LucideIcon Icon="Check" Width="13" Height="13" />
+                    <TextBlock Text="Enregistrer la configuration" Margin="6,0,0,0" VerticalAlignment="Center" />
+                </StackPanel>
+            </Button>
+
+            <!-- ========== À propos ========== -->
+            <Border Style="{StaticResource CardStyle}" Margin="0,20,0,0">
+                <StackPanel>
+                    <StackPanel Orientation="Horizontal">
+                        <controls:LucideIcon Icon="Info" Width="14" Height="14"
+                                             Stroke="{DynamicResource TextTertiaryBrush}" Margin="0,1,7,0" />
+                        <TextBlock Text="À PROPOS" Style="{StaticResource FieldLabelStyle}" />
+                    </StackPanel>
+
+                    <StackPanel Orientation="Horizontal" Margin="0,14,0,0">
+                        <Border Width="46" Height="46" CornerRadius="14" VerticalAlignment="Center"
+                                Background="{DynamicResource AccentSoftBrush}"
+                                BorderBrush="{DynamicResource AccentBorderBrush}" BorderThickness="1">
+                            <controls:LucideIcon Icon="ShieldCheck" Width="24" Height="24" Stroke="{DynamicResource AccentBrush}" />
+                        </Border>
+                        <StackPanel VerticalAlignment="Center" Margin="14,0,0,0">
+                            <TextBlock Text="{Binding ApplicationName}" Style="{StaticResource SectionTitleStyle}" />
+                            <TextBlock Text="Console d'administration des stratégies de groupe"
+                                       Style="{StaticResource CaptionStyle}" Margin="0,3,0,0" />
+                        </StackPanel>
+                    </StackPanel>
+
+                    <Grid Margin="0,16,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition />
+                            <RowDefinition />
+                            <RowDefinition />
+                            <RowDefinition />
+                        </Grid.RowDefinitions>
+
+                        <TextBlock Grid.Row="0" Grid.Column="0" Text="Version" Style="{StaticResource CaptionStyle}" MinWidth="130" />
+                        <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding ApplicationVersion}" Style="{StaticResource BodyStrongStyle}" Margin="12,0,0,0" />
+
+                        <TextBlock Grid.Row="1" Grid.Column="0" Text="Binaire" Style="{StaticResource CaptionStyle}" Margin="0,6,0,0" />
+                        <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding BuildDateText}" Style="{StaticResource BodyStyle}" Margin="12,6,0,0" />
+
+                        <TextBlock Grid.Row="2" Grid.Column="0" Text="Runtime" Style="{StaticResource CaptionStyle}" Margin="0,6,0,0" />
+                        <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding RuntimeText}" Style="{StaticResource BodyStyle}" Margin="12,6,0,0" />
+
+                        <TextBlock Grid.Row="3" Grid.Column="0" Text="Système" Style="{StaticResource CaptionStyle}" Margin="0,6,0,0" />
+                        <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding OsText}" Style="{StaticResource BodyStyle}" Margin="12,6,0,0" TextWrapping="Wrap" />
+                    </Grid>
+
+                    <Border Style="{StaticResource DividerStyle}" Margin="0,16,0,12" />
+
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition />
+                            <RowDefinition />
+                        </Grid.RowDefinitions>
+
+                        <TextBlock Grid.Row="0" Grid.Column="0" Text="Créateur" Style="{StaticResource CaptionStyle}" MinWidth="130" />
+                        <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding AuthorName}" Style="{StaticResource BodyStrongStyle}" Margin="12,0,0,0" />
+
+                        <TextBlock Grid.Row="1" Grid.Column="0" Text="Fonction" Style="{StaticResource CaptionStyle}" Margin="0,6,0,0" />
+                        <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding AuthorRole}" Style="{StaticResource BodyStyle}" Margin="12,6,0,0" />
+                    </Grid>
+
+                    <TextBlock Text="TECHNOLOGIES UTILISÉES" Style="{StaticResource FieldLabelStyle}" Margin="0,18,0,0" />
+                    <ItemsControl ItemsSource="{Binding TechnologyList}" Margin="0,8,0,0">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <StackPanel Orientation="Horizontal" Margin="0,2">
+                                    <controls:LucideIcon Icon="Check" Width="12" Height="12"
+                                                         Stroke="{DynamicResource TextTertiaryBrush}"
+                                                         VerticalAlignment="Top" Margin="0,3,8,0" />
+                                    <TextBlock Text="{Binding}" Style="{StaticResource HintStyle}"
+                                               TextWrapping="Wrap" MaxWidth="600" />
+                                </StackPanel>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+
+                    <TextBlock Style="{StaticResource HintStyle}" Margin="0,16,0,0" TextWrapping="Wrap"
+                               Text="Interface modernisée sans modification du moteur : les opérations Active Directory, le déploiement des GPO, les commandes distantes, les contrôles de droits, les confirmations et la traçabilité restent ceux de la version précédente." />
+                </StackPanel>
+            </Border>
+
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

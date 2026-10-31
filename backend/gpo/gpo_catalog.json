@@ -1,0 +1,350 @@
+{
+  "schemaVersion": 1,
+  "description": "Catalogue consolidé des GPO d'entreprise avec les commandes PowerShell réelles à exécuter sur le domaine Active Directory. Chaque entrée décrit une GPO applicable à des machines/utilisateurs clients et le script PowerShell complet (New-GPO, Set-GPRegistryValue, New-GPLink) qui la matérialise réellement, comme dans une console PowerShell d'administration.",
+  "gpos": [
+    {
+      "id": "control-panel-settings",
+      "displayName": "Restriction du Panneau de configuration et des Paramètres",
+      "category": "Restrictions",
+      "scope": "User",
+      "target": "Utilisateurs standards (comptes non-administrateurs)",
+      "description": "Bloque l'accès au Panneau de configuration et à l'application Paramètres Windows pour les utilisateurs standards. Les administrateurs conservent l'accès complet.",
+      "scenario": "Bob (compte utilisateur simple) se connecte sur son PC client : le Panneau de configuration est bloqué avec le message « Cette opération a été annulée en raison de restrictions en vigueur sur cet ordinateur ». L'administrateur se connecte sur le même PC : accès complet conservé.",
+      "registryPath": "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Policies\\Explorer",
+      "registryValue": "NoControlPanel",
+      "registryType": "DWord",
+      "registryData": 1,
+      "powershell": {
+        "create": "New-GPO -Name \"Restriction Panneau de configuration\" -Comment \"Bloque le Panneau de configuration et les Paramètres pour les utilisateurs standards (NoControlPanel).\"",
+        "configure": "Set-GPRegistryValue -Name \"Restriction Panneau de configuration\" -Key \"HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Policies\\Explorer\" -ValueName \"NoControlPanel\" -Type DWord -Value 1",
+        "link": "New-GPLink -Name \"Restriction Panneau de configuration\" -Target \"OU=Utilisateurs,DC=domaine,DC=local\" -LinkEnabled Yes",
+        "remove": "Remove-GPLink -Name \"Restriction Panneau de configuration\" -Target \"OU=Utilisateurs,DC=domaine,DC=local\"",
+        "fullScript": "Import-Module GroupPolicy -ErrorAction Stop\n$gpo = New-GPO -Name \"Restriction Panneau de configuration\" -Comment \"NoControlPanel\" -ErrorAction Stop\nSet-GPRegistryValue -Name $gpo.DisplayName -Key \"HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Policies\\Explorer\" -ValueName \"NoControlPanel\" -Type DWord -Value 1 -ErrorAction Stop\nNew-GPLink -Name $gpo.DisplayName -Target \"OU=Utilisateurs,DC=domaine,DC=local\" -LinkEnabled Yes -ErrorAction Stop\nWrite-Output (\"GPO créée et liée : \" + $gpo.DisplayName)"
+      }
+    },
+    {
+      "id": "cmd-registry-block",
+      "displayName": "Blocage de l'invite de commandes et du registre",
+      "category": "Restrictions",
+      "scope": "User",
+      "target": "Utilisateurs standards",
+      "description": "Désactive l'accès à l'invite de commandes (cmd.exe) et à l'éditeur du registre (regedit) pour les utilisateurs standards.",
+      "scenario": "Un utilisateur standard ne peut plus lancer cmd.exe ni regedit ; l'administrateur conserve l'accès.",
+      "registryPath": "HKCU\\Software\\Policies\\Microsoft\\Windows\\System",
+      "registryValue": "DisableCMD",
+      "registryType": "DWord",
+      "registryData": 2,
+      "powershell": {
+        "create": "New-GPO -Name \"Blocage CMD et Registre\" -Comment \"Désactive cmd.exe et regedit pour les utilisateurs standards.\"",
+        "configure": "Set-GPRegistryValue -Name \"Blocage CMD et Registre\" -Key \"HKCU\\Software\\Policies\\Microsoft\\Windows\\System\" -ValueName \"DisableCMD\" -Type DWord -Value 2 -ErrorAction Stop",
+        "link": "New-GPLink -Name \"Blocage CMD et Registre\" -Target \"OU=Utilisateurs,DC=domaine,DC=local\" -LinkEnabled Yes",
+        "remove": "Remove-GPLink -Name \"Blocage CMD et Registre\" -Target \"OU=Utilisateurs,DC=domaine,DC=local\"",
+        "fullScript": "Import-Module GroupPolicy -ErrorAction Stop\n$gpo = New-GPO -Name \"Blocage CMD et Registre\" -ErrorAction Stop\nSet-GPRegistryValue -Name $gpo.DisplayName -Key \"HKCU\\Software\\Policies\\Microsoft\\Windows\\System\" -ValueName \"DisableCMD\" -Type DWord -Value 2 -ErrorAction Stop\nNew-GPLink -Name $gpo.DisplayName -Target \"OU=Utilisateurs,DC=domaine,DC=local\" -LinkEnabled Yes -ErrorAction Stop"
+      }
+    },
+    {
+      "id": "shell-restrictions",
+      "displayName": "Restrictions de l'interface (shell)",
+      "category": "Restrictions",
+      "scope": "User",
+      "target": "Utilisateurs standards",
+      "description": "Restreint l'interface Windows : désactive l'accès à Exécuter, aux touches Windows, etc.",
+      "registryPath": "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Policies\\Explorer",
+      "registryValue": "NoRun",
+      "registryType": "DWord",
+      "registryData": 1,
+      "powershell": {
+        "create": "New-GPO -Name \"Restrictions shell\" -Comment \"Restreint l'interface Windows (Exécuter, touches Win, etc.).\"",
+        "configure": "Set-GPRegistryValue -Name \"Restrictions shell\" -Key \"HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Policies\\Explorer\" -ValueName \"NoRun\" -Type DWord -Value 1 -ErrorAction Stop",
+        "link": "New-GPLink -Name \"Restrictions shell\" -Target \"OU=Utilisateurs,DC=domaine,DC=local\" -LinkEnabled Yes",
+        "remove": "Remove-GPLink -Name \"Restrictions shell\" -Target \"OU=Utilisateurs,DC=domaine,DC=local\"",
+        "fullScript": "Import-Module GroupPolicy -ErrorAction Stop\n$gpo = New-GPO -Name \"Restrictions shell\" -ErrorAction Stop\nSet-GPRegistryValue -Name $gpo.DisplayName -Key \"HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Policies\\Explorer\" -ValueName \"NoRun\" -Type DWord -Value 1 -ErrorAction Stop\nNew-GPLink -Name $gpo.DisplayName -Target \"OU=Utilisateurs,DC=domaine,DC=local\" -LinkEnabled Yes -ErrorAction Stop"
+      }
+    },
+    {
+      "id": "screensaver-lock",
+      "displayName": "Verrouillage automatique de l'écran de veille",
+      "category": "Sécurité",
+      "scope": "User",
+      "target": "Tous les utilisateurs",
+      "description": "Active l'écran de veille avec mot de passe après un délai d'inactivité.",
+      "registryPath": "HKCU\\Software\\Policies\\Microsoft\\Windows\\Control Panel\\Desktop",
+      "registryValue": "ScreenSaveTimeOut",
+      "registryType": "String",
+      "registryData": "600",
+      "powershell": {
+        "create": "New-GPO -Name \"Verrouillage ecran veille\" -Comment \"Ecran de veille avec mot de passe apres inactivite.\"",
+        "configure": "Set-GPRegistryValue -Name \"Verrouillage ecran veille\" -Key \"HKCU\\Software\\Policies\\Microsoft\\Windows\\Control Panel\\Desktop\" -ValueName \"ScreenSaveTimeOut\" -Type String -Value \"600\" -ErrorAction Stop\nSet-GPRegistryValue -Name \"Verrouillage ecran veille\" -Key \"HKCU\\Software\\Policies\\Microsoft\\Windows\\Control Panel\\Desktop\" -ValueName \"ScreenSaverIsSecure\" -Type String -Value \"1\" -ErrorAction Stop",
+        "link": "New-GPLink -Name \"Verrouillage ecran veille\" -Target \"OU=Utilisateurs,DC=domaine,DC=local\" -LinkEnabled Yes",
+        "remove": "Remove-GPLink -Name \"Verrouillage ecran veille\" -Target \"OU=Utilisateurs,DC=domaine,DC=local\"",
+        "fullScript": "Import-Module GroupPolicy -ErrorAction Stop\n$gpo = New-GPO -Name \"Verrouillage ecran veille\" -ErrorAction Stop\nSet-GPRegistryValue -Name $gpo.DisplayName -Key \"HKCU\\Software\\Policies\\Microsoft\\Windows\\Control Panel\\Desktop\" -ValueName \"ScreenSaveTimeOut\" -Type String -Value \"600\" -ErrorAction Stop\nSet-GPRegistryValue -Name $gpo.DisplayName -Key \"HKCU\\Software\\Policies\\Microsoft\\Windows\\Control Panel\\Desktop\" -ValueName \"ScreenSaverIsSecure\" -Type String -Value \"1\" -ErrorAction Stop\nNew-GPLink -Name $gpo.DisplayName -Target \"OU=Utilisateurs,DC=domaine,DC=local\" -LinkEnabled Yes -ErrorAction Stop"
+      }
+    },
+    {
+      "id": "powershell-execution-policy",
+      "displayName": "Politique d'exécution PowerShell",
+      "category": "Sécurité",
+      "scope": "Computer",
+      "target": "Tous les ordinateurs",
+      "description": "Définit la politique d'exécution PowerShell sur RemoteSigned pour les ordinateurs du domaine.",
+      "registryPath": "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\PowerShell",
+      "registryValue": "ExecutionPolicy",
+      "registryType": "String",
+      "registryData": "RemoteSigned",
+      "powershell": {
+        "create": "New-GPO -Name \"Politique execution PowerShell\" -Comment \"ExecutionPolicy RemoteSigned.\"",
+        "configure": "Set-GPRegistryValue -Name \"Politique execution PowerShell\" -Key \"HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\PowerShell\" -ValueName \"ExecutionPolicy\" -Type String -Value \"RemoteSigned\" -ErrorAction Stop",
+        "link": "New-GPLink -Name \"Politique execution PowerShell\" -Target \"DC=domaine,DC=local\" -LinkEnabled Yes",
+        "remove": "Remove-GPLink -Name \"Politique execution PowerShell\" -Target \"DC=domaine,DC=local\"",
+        "fullScript": "Import-Module GroupPolicy -ErrorAction Stop\n$gpo = New-GPO -Name \"Politique execution PowerShell\" -ErrorAction Stop\nSet-GPRegistryValue -Name $gpo.DisplayName -Key \"HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\PowerShell\" -ValueName \"ExecutionPolicy\" -Type String -Value \"RemoteSigned\" -ErrorAction Stop\nNew-GPLink -Name $gpo.DisplayName -Target \"DC=domaine,DC=local\" -LinkEnabled Yes -ErrorAction Stop"
+      }
+    },
+    {
+      "id": "uac-hardening",
+      "displayName": "Durcissement UAC",
+      "category": "Sécurité",
+      "scope": "Computer",
+      "target": "Tous les ordinateurs",
+      "description": "Renforce le contrôle de compte d'utilisateur (UAC) : invite sur le bureau sécurisé, etc.",
+      "registryPath": "HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\System",
+      "registryValue": "ConsentPromptBehaviorAdmin",
+      "registryType": "DWord",
+      "registryData": 2,
+      "powershell": {
+        "create": "New-GPO -Name \"Durcissement UAC\" -Comment \"UAC renforce.\"",
+        "configure": "Set-GPRegistryValue -Name \"Durcissement UAC\" -Key \"HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\System\" -ValueName \"ConsentPromptBehaviorAdmin\" -Type DWord -Value 2 -ErrorAction Stop\nSet-GPRegistryValue -Name \"Durcissement UAC\" -Key \"HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\System\" -ValueName \"PromptOnSecureDesktop\" -Type DWord -Value 1 -ErrorAction Stop",
+        "link": "New-GPLink -Name \"Durcissement UAC\" -Target \"DC=domaine,DC=local\" -LinkEnabled Yes",
+        "remove": "Remove-GPLink -Name \"Durcissement UAC\" -Target \"DC=domaine,DC=local\"",
+        "fullScript": "Import-Module GroupPolicy -ErrorAction Stop\n$gpo = New-GPO -Name \"Durcissement UAC\" -ErrorAction Stop\nSet-GPRegistryValue -Name $gpo.DisplayName -Key \"HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\System\" -ValueName \"ConsentPromptBehaviorAdmin\" -Type DWord -Value 2 -ErrorAction Stop\nSet-GPRegistryValue -Name $gpo.DisplayName -Key \"HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\System\" -ValueName \"PromptOnSecureDesktop\" -Type DWord -Value 1 -ErrorAction Stop\nNew-GPLink -Name $gpo.DisplayName -Target \"DC=domaine,DC=local\" -LinkEnabled Yes -ErrorAction Stop"
+      }
+    },
+    {
+      "id": "screensaver-lock-machine",
+      "displayName": "Verrouillage automatique de l'écran (machine)",
+      "category": "Sécurité",
+      "scope": "Computer",
+      "target": "Tous les ordinateurs",
+      "description": "Force le verrouillage de session après inactivité au niveau machine (HKLM).",
+      "registryPath": "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\Control Panel\\Desktop",
+      "registryValue": "ScreenSaveTimeOut",
+      "registryType": "String",
+      "registryData": "300",
+      "powershell": {
+        "create": "New-GPO -Name \"Verrouillage ecran machine\" -Comment \"Verrouillage apres inactivite (machine).\"",
+        "configure": "Set-GPRegistryValue -Name \"Verrouillage ecran machine\" -Key \"HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\Control Panel\\Desktop\" -ValueName \"ScreenSaveTimeOut\" -Type String -Value \"300\" -ErrorAction Stop",
+        "link": "New-GPLink -Name \"Verrouillage ecran machine\" -Target \"DC=domaine,DC=local\" -LinkEnabled Yes",
+        "remove": "Remove-GPLink -Name \"Verrouillage ecran machine\" -Target \"DC=domaine,DC=local\"",
+        "fullScript": "Import-Module GroupPolicy -ErrorAction Stop\n$gpo = New-GPO -Name \"Verrouillage ecran machine\" -ErrorAction Stop\nSet-GPRegistryValue -Name $gpo.DisplayName -Key \"HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\Control Panel\\Desktop\" -ValueName \"ScreenSaveTimeOut\" -Type String -Value \"300\" -ErrorAction Stop\nNew-GPLink -Name $gpo.DisplayName -Target \"DC=domaine,DC=local\" -LinkEnabled Yes -ErrorAction Stop"
+      }
+    },
+    {
+      "id": "windows-update",
+      "displayName": "Configuration Windows Update (WSUS)",
+      "category": "Mise à jour",
+      "scope": "Computer",
+      "target": "Tous les ordinateurs",
+      "description": "Configure les ordinateurs pour utiliser un serveur WSUS interne.",
+      "registryPath": "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\WindowsUpdate",
+      "registryValue": "WUServer",
+      "registryType": "String",
+      "registryData": "http://wsus.domaine.local:8530",
+      "powershell": {
+        "create": "New-GPO -Name \"Windows Update WSUS\" -Comment \"WSUS interne.\"",
+        "configure": "Set-GPRegistryValue -Name \"Windows Update WSUS\" -Key \"HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\WindowsUpdate\" -ValueName \"WUServer\" -Type String -Value \"http://wsus.domaine.local:8530\" -ErrorAction Stop\nSet-GPRegistryValue -Name \"Windows Update WSUS\" -Key \"HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\WindowsUpdate\" -ValueName \"WUStatusServer\" -Type String -Value \"http://wsus.domaine.local:8530\" -ErrorAction Stop",
+        "link": "New-GPLink -Name \"Windows Update WSUS\" -Target \"DC=domaine,DC=local\" -LinkEnabled Yes",
+        "remove": "Remove-GPLink -Name \"Windows Update WSUS\" -Target \"DC=domaine,DC=local\"",
+        "fullScript": "Import-Module GroupPolicy -ErrorAction Stop\n$gpo = New-GPO -Name \"Windows Update WSUS\" -ErrorAction Stop\nSet-GPRegistryValue -Name $gpo.DisplayName -Key \"HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\WindowsUpdate\" -ValueName \"WUServer\" -Type String -Value \"http://wsus.domaine.local:8530\" -ErrorAction Stop\nSet-GPRegistryValue -Name $gpo.DisplayName -Key \"HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\WindowsUpdate\" -ValueName \"WUStatusServer\" -Type String -Value \"http://wsus.domaine.local:8530\" -ErrorAction Stop\nNew-GPLink -Name $gpo.DisplayName -Target \"DC=domaine,DC=local\" -LinkEnabled Yes -ErrorAction Stop"
+      }
+    },
+    {
+      "id": "rdp-lockdown",
+      "displayName": "Verrouillage RDP / NLA",
+      "category": "Réseau",
+      "scope": "Computer",
+      "target": "Tous les ordinateurs",
+      "description": "Force l'authentification au niveau réseau (NLA) pour les connexions RDP.",
+      "registryPath": "HKLM\\SYSTEM\\CurrentControlSet\\Control\\Terminal Server\\WinStations\\RDP-Tcp",
+      "registryValue": "UserAuthentication",
+      "registryType": "DWord",
+      "registryData": 1,
+      "powershell": {
+        "create": "New-GPO -Name \"Verrouillage RDP NLA\" -Comment \"Force NLA pour RDP.\"",
+        "configure": "Set-GPRegistryValue -Name \"Verrouillage RDP NLA\" -Key \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Terminal Server\\WinStations\\RDP-Tcp\" -ValueName \"UserAuthentication\" -Type DWord -Value 1 -ErrorAction Stop",
+        "link": "New-GPLink -Name \"Verrouillage RDP NLA\" -Target \"DC=domaine,DC=local\" -LinkEnabled Yes",
+        "remove": "Remove-GPLink -Name \"Verrouillage RDP NLA\" -Target \"DC=domaine,DC=local\"",
+        "fullScript": "Import-Module GroupPolicy -ErrorAction Stop\n$gpo = New-GPO -Name \"Verrouillage RDP NLA\" -ErrorAction Stop\nSet-GPRegistryValue -Name $gpo.DisplayName -Key \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Terminal Server\\WinStations\\RDP-Tcp\" -ValueName \"UserAuthentication\" -Type DWord -Value 1 -ErrorAction Stop\nNew-GPLink -Name $gpo.DisplayName -Target \"DC=domaine,DC=local\" -LinkEnabled Yes -ErrorAction Stop"
+      }
+    },
+    {
+      "id": "legacy-protocols-hardening",
+      "displayName": "Désactivation des protocoles legacy (SMB1, LLMNR, NTLMv1)",
+      "category": "Réseau",
+      "scope": "Computer",
+      "target": "Tous les ordinateurs",
+      "description": "Désactive SMB1, LLMNR et NTLMv1 pour réduire la surface d'attaque réseau.",
+      "registryPath": "HKLM\\SYSTEM\\CurrentControlSet\\Services\\LanmanServer\\Parameters",
+      "registryValue": "SMB1",
+      "registryType": "DWord",
+      "registryData": 0,
+      "powershell": {
+        "create": "New-GPO -Name \"Desactivation protocoles legacy\" -Comment \"SMB1/LLMNR/NTLMv1 off.\"",
+        "configure": "Set-GPRegistryValue -Name \"Desactivation protocoles legacy\" -Key \"HKLM\\SYSTEM\\CurrentControlSet\\Services\\LanmanServer\\Parameters\" -ValueName \"SMB1\" -Type DWord -Value 0 -ErrorAction Stop",
+        "link": "New-GPLink -Name \"Desactivation protocoles legacy\" -Target \"DC=domaine,DC=local\" -LinkEnabled Yes",
+        "remove": "Remove-GPLink -Name \"Desactivation protocoles legacy\" -Target \"DC=domaine,DC=local\"",
+        "fullScript": "Import-Module GroupPolicy -ErrorAction Stop\n$gpo = New-GPO -Name \"Desactivation protocoles legacy\" -ErrorAction Stop\nSet-GPRegistryValue -Name $gpo.DisplayName -Key \"HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows NT\\DNSClient\" -ValueName \"EnableMulticast\" -Type DWord -Value 0 -ErrorAction Stop\nSet-GPRegistryValue -Name $gpo.DisplayName -Key \"HKLM\\SYSTEM\\CurrentControlSet\\Services\\LanmanServer\\Parameters\" -ValueName \"SMB1\" -Type DWord -Value 0 -ErrorAction Stop\nNew-GPLink -Name $gpo.DisplayName -Target \"DC=domaine,DC=local\" -LinkEnabled Yes -ErrorAction Stop"
+      }
+    },
+    {
+      "id": "smartscreen-enforcement",
+      "displayName": "SmartScreen (application et téléchargements)",
+      "category": "Sécurité",
+      "scope": "Computer",
+      "target": "Tous les ordinateurs",
+      "description": "Active SmartScreen pour les applications et les téléchargements.",
+      "registryPath": "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\System",
+      "registryValue": "EnableSmartScreen",
+      "registryType": "DWord",
+      "registryData": 1,
+      "powershell": {
+        "create": "New-GPO -Name \"SmartScreen\" -Comment \"SmartScreen active.\"",
+        "configure": "Set-GPRegistryValue -Name \"SmartScreen\" -Key \"HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\System\" -ValueName \"EnableSmartScreen\" -Type DWord -Value 1 -ErrorAction Stop",
+        "link": "New-GPLink -Name \"SmartScreen\" -Target \"DC=domaine,DC=local\" -LinkEnabled Yes",
+        "remove": "Remove-GPLink -Name \"SmartScreen\" -Target \"DC=domaine,DC=local\"",
+        "fullScript": "Import-Module GroupPolicy -ErrorAction Stop\n$gpo = New-GPO -Name \"SmartScreen\" -ErrorAction Stop\nSet-GPRegistryValue -Name $gpo.DisplayName -Key \"HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\System\" -ValueName \"EnableSmartScreen\" -Type DWord -Value 1 -ErrorAction Stop\nNew-GPLink -Name $gpo.DisplayName -Target \"DC=domaine,DC=local\" -LinkEnabled Yes -ErrorAction Stop"
+      }
+    },
+    {
+      "id": "browser-url-blocklist",
+      "displayName": "Liste de blocage d'URL (navigateur)",
+      "category": "Réseau",
+      "scope": "User",
+      "target": "Utilisateurs standards",
+      "description": "Bloque l'accès à une liste d'URL (malveillantes ou non autorisées) dans le navigateur.",
+      "registryPath": "HKCU\\Software\\Policies\\Microsoft\\Edge",
+      "registryValue": "URLBlocklist",
+      "registryType": "String",
+      "registryData": "[]",
+      "powershell": {
+        "create": "New-GPO -Name \"Blocage URL navigateur\" -Comment \"URL blocklist.\"",
+        "configure": "Set-GPRegistryValue -Name \"Blocage URL navigateur\" -Key \"HKCU\\Software\\Policies\\Microsoft\\Edge\" -ValueName \"URLBlocklist\" -Type String -Value \"[]\" -ErrorAction Stop",
+        "link": "New-GPLink -Name \"Blocage URL navigateur\" -Target \"OU=Utilisateurs,DC=domaine,DC=local\" -LinkEnabled Yes",
+        "remove": "Remove-GPLink -Name \"Blocage URL navigateur\" -Target \"OU=Utilisateurs,DC=domaine,DC=local\"",
+        "fullScript": "Import-Module GroupPolicy -ErrorAction Stop\n$gpo = New-GPO -Name \"Blocage URL navigateur\" -ErrorAction Stop\nSet-GPRegistryValue -Name $gpo.DisplayName -Key \"HKCU\\Software\\Policies\\Microsoft\\Edge\" -ValueName \"URLBlocklist\" -Type String -Value \"[]\" -ErrorAction Stop\nNew-GPLink -Name $gpo.DisplayName -Target \"OU=Utilisateurs,DC=domaine,DC=local\" -LinkEnabled Yes -ErrorAction Stop"
+      }
+    },
+    {
+      "id": "autorun-hardening",
+      "displayName": "Durcissement de l'Autorun",
+      "category": "Périphériques",
+      "scope": "Computer",
+      "target": "Tous les ordinateurs",
+      "description": "Désactive l'exécution automatique (Autorun) sur tous les lecteurs.",
+      "registryPath": "HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\Explorer",
+      "registryValue": "NoDriveTypeAutoRun",
+      "registryType": "DWord",
+      "registryData": 255,
+      "powershell": {
+        "create": "New-GPO -Name \"Desactivation Autorun\" -Comment \"Autorun off.\"",
+        "configure": "Set-GPRegistryValue -Name \"Desactivation Autorun\" -Key \"HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\Explorer\" -ValueName \"NoDriveTypeAutoRun\" -Type DWord -Value 255 -ErrorAction Stop",
+        "link": "New-GPLink -Name \"Desactivation Autorun\" -Target \"DC=domaine,DC=local\" -LinkEnabled Yes",
+        "remove": "Remove-GPLink -Name \"Desactivation Autorun\" -Target \"DC=domaine,DC=local\"",
+        "fullScript": "Import-Module GroupPolicy -ErrorAction Stop\n$gpo = New-GPO -Name \"Desactivation Autorun\" -ErrorAction Stop\nSet-GPRegistryValue -Name $gpo.DisplayName -Key \"HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\Explorer\" -ValueName \"NoDriveTypeAutoRun\" -Type DWord -Value 255 -ErrorAction Stop\nNew-GPLink -Name $gpo.DisplayName -Target \"DC=domaine,DC=local\" -LinkEnabled Yes -ErrorAction Stop"
+      }
+    },
+    {
+      "id": "removable-storage-restrictions",
+      "displayName": "Restriction des supports amovibles",
+      "category": "Périphériques",
+      "scope": "Computer",
+      "target": "Tous les ordinateurs",
+      "description": "Bloque l'accès en écriture aux supports amovibles (clés USB, etc.).",
+      "registryPath": "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\RemovableStorageDevices",
+      "registryValue": "Deny_Write",
+      "registryType": "DWord",
+      "registryData": 1,
+      "powershell": {
+        "create": "New-GPO -Name \"Restriction supports amovibles\" -Comment \"Ecriture USB bloquee.\"",
+        "configure": "Set-GPRegistryValue -Name \"Restriction supports amovibles\" -Key \"HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\RemovableStorageDevices\" -ValueName \"Deny_Write\" -Type DWord -Value 1 -ErrorAction Stop",
+        "link": "New-GPLink -Name \"Restriction supports amovibles\" -Target \"DC=domaine,DC=local\" -LinkEnabled Yes",
+        "remove": "Remove-GPLink -Name \"Restriction supports amovibles\" -Target \"DC=domaine,DC=local\"",
+        "fullScript": "Import-Module GroupPolicy -ErrorAction Stop\n$gpo = New-GPO -Name \"Restriction supports amovibles\" -ErrorAction Stop\nSet-GPRegistryValue -Name $gpo.DisplayName -Key \"HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\RemovableStorageDevices\" -ValueName \"Deny_Write\" -Type DWord -Value 1 -ErrorAction Stop\nNew-GPLink -Name $gpo.DisplayName -Target \"DC=domaine,DC=local\" -LinkEnabled Yes -ErrorAction Stop"
+      }
+    },
+    {
+      "id": "asr-exploit-guard",
+      "displayName": "Règles ASR (Attack Surface Reduction)",
+      "category": "Sécurité",
+      "scope": "Computer",
+      "target": "Tous les ordinateurs",
+      "description": "Active les règles de réduction de surface d'attaque de Windows Defender.",
+      "registryPath": "HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows Defender\\Windows Defender Exploit Guard\\ASR",
+      "registryValue": "ExploitGuard_ASR_Rules",
+      "registryType": "DWord",
+      "registryData": 1,
+      "powershell": {
+        "create": "New-GPO -Name \"Regles ASR\" -Comment \"Attack Surface Reduction.\"",
+        "configure": "Set-GPRegistryValue -Name \"Regles ASR\" -Key \"HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows Defender\\Windows Defender Exploit Guard\\ASR\" -ValueName \"ExploitGuard_ASR_Rules\" -Type DWord -Value 1 -ErrorAction Stop",
+        "link": "New-GPLink -Name \"Regles ASR\" -Target \"DC=domaine,DC=local\" -LinkEnabled Yes",
+        "remove": "Remove-GPLink -Name \"Regles ASR\" -Target \"DC=domaine,DC=local\"",
+        "fullScript": "Import-Module GroupPolicy -ErrorAction Stop\n$gpo = New-GPO -Name \"Regles ASR\" -ErrorAction Stop\nSet-GPRegistryValue -Name $gpo.DisplayName -Key \"HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows Defender\\Windows Defender Exploit Guard\\ASR\" -ValueName \"ExploitGuard_ASR_Rules\" -Type DWord -Value 1 -ErrorAction Stop\nNew-GPLink -Name $gpo.DisplayName -Target \"DC=domaine,DC=local\" -LinkEnabled Yes -ErrorAction Stop"
+      }
+    },
+    {
+      "id": "audit-policy-subcategory",
+      "displayName": "Politique d'audit avancée (sous-catégories)",
+      "category": "Audit",
+      "scope": "Computer",
+      "target": "Tous les ordinateurs",
+      "description": "Active l'audit avancé par sous-catégorie pour une traçabilité fine.",
+      "registryPath": "HKLM\\SYSTEM\\CurrentControlSet\\Control\\Lsa",
+      "registryValue": "SCENoApplyLegacyAuditPolicy",
+      "registryType": "DWord",
+      "registryData": 1,
+      "powershell": {
+        "create": "New-GPO -Name \"Audit avance\" -Comment \"Audit par sous-categorie.\"",
+        "configure": "Set-GPRegistryValue -Name \"Audit avance\" -Key \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Lsa\" -ValueName \"SCENoApplyLegacyAuditPolicy\" -Type DWord -Value 1 -ErrorAction Stop",
+        "link": "New-GPLink -Name \"Audit avance\" -Target \"DC=domaine,DC=local\" -LinkEnabled Yes",
+        "remove": "Remove-GPLink -Name \"Audit avance\" -Target \"DC=domaine,DC=local\"",
+        "fullScript": "Import-Module GroupPolicy -ErrorAction Stop\n$gpo = New-GPO -Name \"Audit avance\" -ErrorAction Stop\nSet-GPRegistryValue -Name $gpo.DisplayName -Key \"HKLM\\SYSTEM\\CurrentControlSet\\Control\\Lsa\" -ValueName \"SCENoApplyLegacyAuditPolicy\" -Type DWord -Value 1 -ErrorAction Stop\nNew-GPLink -Name $gpo.DisplayName -Target \"DC=domaine,DC=local\" -LinkEnabled Yes -ErrorAction Stop"
+      }
+    },
+    {
+      "id": "uac-hardening-extra",
+      "displayName": "Durcissement UAC (complément)",
+      "category": "Sécurité",
+      "scope": "Computer",
+      "target": "Tous les ordinateurs",
+      "description": "Complément UAC : désactive l'élévation silencieuse pour les administrateurs.",
+      "registryPath": "HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\System",
+      "registryValue": "ConsentPromptBehaviorAdmin",
+      "registryType": "DWord",
+      "registryData": 2,
+      "powershell": {
+        "create": "New-GPO -Name \"UAC complement\" -Comment \"UAC renforce complement.\"",
+        "configure": "Set-GPRegistryValue -Name \"UAC complement\" -Key \"HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\System\" -ValueName \"ConsentPromptBehaviorAdmin\" -Type DWord -Value 2 -ErrorAction Stop",
+        "link": "New-GPLink -Name \"UAC complement\" -Target \"DC=domaine,DC=local\" -LinkEnabled Yes",
+        "remove": "Remove-GPLink -Name \"UAC complement\" -Target \"DC=domaine,DC=local\"",
+        "fullScript": "Import-Module GroupPolicy -ErrorAction Stop\n$gpo = New-GPO -Name \"UAC complement\" -ErrorAction Stop\nSet-GPRegistryValue -Name $gpo.DisplayName -Key \"HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\System\" -ValueName \"ConsentPromptBehaviorAdmin\" -Type DWord -Value 2 -ErrorAction Stop\nNew-GPLink -Name $gpo.DisplayName -Target \"DC=domaine,DC=local\" -LinkEnabled Yes -ErrorAction Stop"
+      }
+    },
+    {
+      "id": "windows-defender-firewall",
+      "displayName": "Pare-feu Windows Defender (durcissement)",
+      "category": "Réseau",
+      "scope": "Computer",
+      "target": "Tous les ordinateurs",
+      "description": "Active et durcit le pare-feu Windows Defender sur tous les profils.",
+      "registryPath": "HKLM\\SOFTWARE\\Policies\\Microsoft\\WindowsFirewall\\DomainProfile",
+      "registryValue": "EnableFirewall",
+      "registryType": "DWord",
+      "registryData": 1,
+      "powershell": {
+        "create": "New-GPO -Name \"Pare-feu Defender\" -Comment \"Firewall on.\"",
+        "configure": "Set-GPRegistryValue -Name \"Pare-feu Defender\" -Key \"HKLM\\SOFTWARE\\Policies\\Microsoft\\WindowsFirewall\\DomainProfile\" -ValueName \"EnableFirewall\" -Type DWord -Value 1 -ErrorAction Stop",
+        "link": "New-GPLink -Name \"Pare-feu Defender\" -Target \"DC=domaine,DC=local\" -LinkEnabled Yes",
+        "remove": "Remove-GPLink -Name \"Pare-feu Defender\" -Target \"DC=domaine,DC=local\"",
+        "fullScript": "Import-Module GroupPolicy -ErrorAction Stop\n$gpo = New-GPO -Name \"Pare-feu Defender\" -ErrorAction Stop\nSet-GPRegistryValue -Name $gpo.DisplayName -Key \"HKLM\\SOFTWARE\\Policies\\Microsoft\\WindowsFirewall\\DomainProfile\" -ValueName \"EnableFirewall\" -Type DWord -Value 1 -ErrorAction Stop\nNew-GPLink -Name $gpo.DisplayName -Target \"DC=domaine,DC=local\" -LinkEnabled Yes -ErrorAction Stop"
+      }
+    }
+  ]
+}

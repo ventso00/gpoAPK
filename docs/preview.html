@@ -1,0 +1,2099 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ADOps GPO Manager — Nouveau flux : synchronisation, départements, test réel (2 sessions), CRUD</title>
+<style>
+/* =====================================================================
+   ADOps GPO MANAGER — Thème clair par défaut (inspiration dashboard moderne)
+   Bascule via [data-theme="light" | "dark"] sur <html>, accent via --accent.
+   ===================================================================== */
+:root{
+  color-scheme:light;
+  --accent:#0ea56e;            /* émeraude par défaut */
+  --accent2:#17c98b;
+  --bg:#eef2f6;--side:#ffffff;--panel:#ffffff;--panel2:#f7fafc;--inset:#f1f5f8;
+  --input:#ffffff;--line:#dfe7ee;--line-soft:#e7edf3;
+  --ink:#182530;--muted:#64788b;--nav:#eef4f6;
+  --thead:#f6f9fb;--toolbar:#fffffff2;--modalback:#0b1c28b8;
+  --card-grad:linear-gradient(150deg,#ffffff,#f7fafc);
+  --console:#0e1a24;--console-ink:#c9e3e0;
+  --shadow:0 10px 30px rgba(23,43,66,.10);--shadow-sm:0 1px 3px rgba(23,43,66,.08);
+  --green:#0f9d63;--red:#d64550;--amber:#b4740c;
+  --topline:linear-gradient(90deg,var(--red) 0 18%,var(--accent) 18% 82%,transparent 82%);
+}
+[data-theme="dark"]{
+  color-scheme:dark;
+  --accent:#2fe0a8;--accent2:#5cf0c4;
+  --bg:#0b1119;--side:#101923;--panel:#151f2a;--panel2:#101822;--inset:#0d151e;
+  --input:#0d151e;--line:#2a3b47;--line-soft:#2a3b4766;
+  --ink:#eaf4f5;--muted:#a4b6bf;--nav:#1b2c38;
+  --thead:#0d151e;--toolbar:#0b1119e8;--modalback:#040710cc;
+  --card-grad:linear-gradient(150deg,#151f2a,#101923);
+  --console:#070c12;--console-ink:#c9e3e0;
+  --shadow:0 18px 50px #0006;--shadow-sm:0 2px 12px #0003;
+  --green:#61d5a0;--red:#ff777d;--amber:#ffc66d;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.55 'Segoe UI',Inter,system-ui,sans-serif;transition:background .25s,color .25s}
+.topline{height:3px;background:var(--topline)}
+h1{font-size:24px;line-height:1.2;margin:0;letter-spacing:-.4px}
+h2{font-size:15px;margin:0 0 10px}
+h3{font-size:13.5px;margin:0 0 6px}
+.muted,small,.caption{color:var(--muted)}
+.tag{display:inline-block;color:var(--accent);font-size:10px;letter-spacing:1.2px;font-weight:700}
+.eyebrow{font-size:10px;letter-spacing:1.3px;color:var(--muted);font-weight:700}
+.hidden{display:none!important}
+code{background:color-mix(in srgb,var(--ink) 6%,transparent);border-radius:6px;padding:1px 5px;font-size:12px}
+
+/* ---------- boutons / champs ---------- */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:38px;padding:8px 14px;border-radius:10px;border:1px solid var(--line);background:var(--panel);color:var(--ink);font:600 13px/1.2 'Segoe UI',system-ui,sans-serif;cursor:pointer;transition:.15s;box-shadow:var(--shadow-sm)}
+.btn:hover{border-color:var(--accent);color:var(--accent)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn.primary:hover{background:var(--accent2);color:#fff}
+.btn.danger{border-color:color-mix(in srgb,var(--red) 40%,transparent);color:var(--red)}
+.btn.danger:hover{border-color:var(--red);color:var(--red)}
+.btn.small{min-height:30px;padding:4px 10px;font-size:12px}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.input,select,textarea{width:100%;min-height:38px;border:1px solid var(--line);background:var(--input);border-radius:10px;padding:8px 11px;color:var(--ink);font:inherit;outline:none;transition:border .15s}
+textarea{min-height:70px;resize:vertical;font-family:Consolas,monospace;font-size:12.5px}
+[data-theme="dark"] textarea{background:var(--inset)}
+.input:focus,select:focus,textarea:focus{outline:2px solid color-mix(in srgb,var(--accent) 45%,transparent);outline-offset:1px}
+.field{display:grid;gap:6px;margin:10px 0}
+.field label{font-size:11px;font-weight:700;color:var(--muted);letter-spacing:.4px}
+.hint{font-size:11px;color:var(--muted)}
+.searchbox{display:flex;align-items:center;gap:8px;border:1px solid var(--line);background:var(--input);border-radius:999px;padding:8px 14px;min-height:38px;flex:1;max-width:420px}
+.searchbox input{border:0;outline:0;background:transparent;color:var(--ink);font:inherit;width:100%}
+.searchbox .si{color:var(--muted);font-size:13px}
+
+/* ---------- pilules / badges ---------- */
+.pill{display:inline-flex;align-items:center;gap:5px;border-radius:30px;padding:2px 9px;font-size:11px;font-weight:650;border:1px solid color-mix(in srgb,var(--green) 27%,transparent);color:var(--green);background:color-mix(in srgb,var(--green) 6%,transparent);white-space:nowrap}
+.pill.warn{color:var(--amber);border-color:color-mix(in srgb,var(--amber) 27%,transparent);background:color-mix(in srgb,var(--amber) 5%,transparent)}
+.pill.red{color:var(--red);border-color:color-mix(in srgb,var(--red) 27%,transparent);background:color-mix(in srgb,var(--red) 5%,transparent)}
+.pill.cyan{color:var(--accent);border-color:color-mix(in srgb,var(--accent) 27%,transparent);background:color-mix(in srgb,var(--accent) 6%,transparent)}
+.pill.grey{color:var(--muted);border-color:color-mix(in srgb,var(--muted) 20%,transparent);background:color-mix(in srgb,var(--muted) 5%,transparent)}
+.dot{width:7px;height:7px;border-radius:50%;background:currentColor;display:inline-block}
+
+/* ---------- structure ---------- */
+.shell{display:grid;grid-template-columns:258px minmax(0,1fr);min-height:calc(100vh - 3px)}
+aside{background:var(--side);border-right:1px solid var(--line);padding:20px 13px;display:flex;flex-direction:column;gap:14px;position:sticky;top:0;height:100vh;overflow:auto}
+.brand{display:flex;align-items:center;gap:11px;padding:0 8px 14px;border-bottom:1px solid var(--line)}
+.brandmark{width:36px;height:36px;flex:none;border:1px solid color-mix(in srgb,var(--accent) 45%,transparent);border-radius:11px;color:var(--accent);display:grid;place-items:center;font-weight:800;font-size:15px;box-shadow:0 0 18px color-mix(in srgb,var(--accent) 14%,transparent)}
+.nav{display:grid;gap:3px}
+.nav .group{padding:12px 10px 4px}
+.nav button{min-height:40px;border:1px solid transparent;background:transparent;border-radius:10px;color:var(--muted);text-align:left;padding:8px 10px;font:inherit;cursor:pointer;display:flex;gap:10px;align-items:center;width:100%}
+.nav button:hover{background:var(--nav);color:var(--ink)}
+.nav button.active{background:var(--accent);color:#fff;font-weight:600}
+.nav button.active .num,.nav button.active .count,.nav button.active caption{background:#ffffff2b;color:#fff}
+.nav .num{flex:none;width:22px;height:22px;border-radius:7px;background:color-mix(in srgb,var(--accent) 12%,transparent);color:var(--accent);display:grid;place-items:center;font-weight:700;font-size:12px}
+.nav .count{margin-left:auto;background:color-mix(in srgb,var(--accent) 14%,transparent);color:var(--accent);border-radius:20px;font-size:10.5px;font-weight:700;padding:1px 8px}
+.conn{margin-top:auto;padding:13px;background:var(--panel2);border:1px solid var(--line);border-radius:12px;font-size:12px}
+.conn strong{display:block;margin:4px 0}
+.status{display:inline-flex;align-items:center;gap:7px;color:var(--green);font-size:11.5px}
+.main{min-width:0;display:flex;flex-direction:column}
+.toolbar{min-height:58px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;gap:14px;padding:10px 26px;background:var(--toolbar);position:sticky;top:0;z-index:5;backdrop-filter:blur(12px)}
+.crumb{font-size:12px;color:var(--muted)}
+.toolbar-right{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.badge-test{border:1px dashed color-mix(in srgb,var(--amber) 40%,transparent);color:var(--amber);border-radius:8px;padding:4px 10px;font-size:11px;font-weight:700;letter-spacing:.6px}
+.userchip{display:flex;align-items:center;gap:9px;border:1px solid var(--line);background:var(--panel);border-radius:999px;padding:4px 12px 4px 4px;box-shadow:var(--shadow-sm)}
+.userchip .av{width:28px;height:28px;border-radius:50%;background:var(--accent);color:#fff;display:grid;place-items:center;font-weight:800;font-size:12px}
+.content{max-width:1460px;width:100%;margin:0 auto;padding:26px 28px 70px}
+.page{display:none;animation:enter .18s ease-out}
+.page.active{display:block}
+@keyframes enter{from{opacity:.4;transform:translateY(4px)}to{opacity:1;transform:none}}
+.subtitle{color:var(--muted);margin:7px 0 20px;max-width:860px}
+.row{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.grid{display:grid;gap:13px}
+.g2{grid-template-columns:repeat(2,minmax(0,1fr))}
+.g3{grid-template-columns:repeat(3,minmax(0,1fr))}
+.g4{grid-template-columns:repeat(4,minmax(0,1fr))}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:17px;box-shadow:var(--shadow-sm);transition:box-shadow .2s}
+.card:hover{box-shadow:var(--shadow)}
+.card+.card{margin-top:12px}
+.metric{font-size:24px;font-weight:700;margin:6px 0 2px}
+.metric.cyan{color:var(--accent)}.metric.green{color:var(--green)}.metric.red{color:var(--red)}.metric.amber{color:var(--amber)}
+.label{font-size:10px;font-weight:700;letter-spacing:1px;color:var(--muted)}
+.notice{border:1px solid color-mix(in srgb,var(--accent) 27%,transparent);border-left:3px solid var(--accent);border-radius:10px;background:color-mix(in srgb,var(--accent) 4%,transparent);padding:11px 14px;margin:10px 0;font-size:13px}
+.notice.warn{border-color:color-mix(in srgb,var(--amber) 27%,transparent);border-left-color:var(--amber);background:color-mix(in srgb,var(--amber) 4%,transparent)}
+.notice.error{border-color:color-mix(in srgb,var(--red) 27%,transparent);border-left-color:var(--red);background:color-mix(in srgb,var(--red) 4%,transparent)}
+.steps{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px}
+.stepchip{display:flex;gap:9px;align-items:center;border:1px solid var(--line);border-radius:10px;padding:8px 13px;color:var(--muted);background:var(--panel);font-size:12.5px;cursor:default}
+.stepchip .num{width:22px;height:22px;border-radius:7px;background:color-mix(in srgb,var(--accent) 12%,transparent);color:var(--accent);display:grid;place-items:center;font-weight:700;font-size:12px}
+.stepchip.done{color:var(--green);border-color:color-mix(in srgb,var(--green) 27%,transparent)}
+.stepchip.done .num{background:color-mix(in srgb,var(--green) 12%,transparent);color:var(--green)}
+.stepchip.current{color:var(--ink);border-color:color-mix(in srgb,var(--accent) 40%,transparent);box-shadow:0 0 0 1px color-mix(in srgb,var(--accent) 20%,transparent)}
+
+/* ---------- tables ---------- */
+.tablewrap{overflow:auto;border:1px solid var(--line);border-radius:12px}
+table{width:100%;border-collapse:collapse;font-size:12.5px}
+th{text-align:left;color:var(--muted);font-size:10px;letter-spacing:.6px;text-transform:uppercase;background:var(--thead);padding:10px;border-bottom:1px solid var(--line);white-space:nowrap}
+td{padding:10px;border-bottom:1px solid var(--line-soft);vertical-align:middle}
+tbody tr:last-child td{border-bottom:0}
+tbody tr:hover{background:color-mix(in srgb,var(--accent) 3%,transparent)}
+tr.offline td{opacity:.55}
+tr.dc-row td{opacity:.6}
+input[type=checkbox]{width:16px;height:16px;accent-color:var(--accent);cursor:pointer}
+tr.selectable{cursor:pointer}
+
+/* ---------- cartes GPO ---------- */
+.gpogrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.gpoc{border:1px solid var(--line);border-radius:12px;background:var(--panel);padding:14px;cursor:pointer;transition:.15s;display:flex;flex-direction:column;gap:7px;box-shadow:var(--shadow-sm)}
+.gpoc:hover{border-color:color-mix(in srgb,var(--accent) 40%,transparent);box-shadow:var(--shadow)}
+.gpoc.sel{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 5%,var(--panel));box-shadow:0 0 0 1px color-mix(in srgb,var(--accent) 22%,transparent)}
+.gpoc .top{display:flex;gap:10px;align-items:flex-start}
+.gpoc h3{flex:1}
+.gpoc p{margin:0;font-size:12px;color:var(--muted)}
+.filters{display:flex;gap:7px;flex-wrap:wrap;margin:12px 0}
+.chip{border:1px solid var(--line);background:var(--panel);color:var(--muted);border-radius:20px;padding:5px 12px;font-size:12px;cursor:pointer}
+.chip.on{border-color:var(--accent);color:var(--accent);background:color-mix(in srgb,var(--accent) 6%,transparent)}
+
+/* ---------- paramètres ---------- */
+.param{display:grid;gap:6px;padding:11px 0;border-top:1px solid var(--line-soft)}
+.param:first-of-type{border-top:0}
+.param .plabel{font-weight:600;font-size:13px}
+.switch{display:flex;gap:10px;align-items:center;cursor:pointer;user-select:none}
+.switch input{width:17px;height:17px}
+/* onglets du module Paramètres */
+.settabs{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px;margin:16px 0 18px}
+.settab{border:1px solid var(--line);background:var(--panel);border-radius:11px;min-height:56px;padding:8px 10px;font:600 12px/1.35 'Segoe UI',system-ui,sans-serif;cursor:pointer;color:var(--muted);display:grid;gap:3px;justify-items:start;text-align:left;box-shadow:var(--shadow-sm)}
+.settab:hover{border-color:color-mix(in srgb,var(--accent) 40%,transparent);color:var(--ink)}
+.settab.on{border-color:var(--accent);color:var(--accent);background:color-mix(in srgb,var(--accent) 5%,var(--panel));box-shadow:0 0 0 1px color-mix(in srgb,var(--accent) 22%,transparent)}
+.settab .ic{font-size:15px}
+.accrow{display:flex;gap:10px;flex-wrap:wrap}
+.accopt{width:34px;height:34px;border-radius:10px;border:2px solid transparent;cursor:pointer;display:grid;place-items:center;color:#fff;font-weight:800}
+.accopt.on{border-color:var(--ink);box-shadow:0 0 0 2px color-mix(in srgb,var(--ink) 15%,transparent)}
+
+/* ---------- console de déploiement ---------- */
+.console{background:var(--console);border:1px solid var(--line);border-radius:10px;padding:14px 16px;font:12.3px/1.7 Consolas,'Cascadia Mono',monospace;color:var(--console-ink);max-height:340px;overflow:auto;white-space:pre-wrap;word-break:break-all}
+.console .ok{color:var(--green)}.console .err{color:var(--red)}.console .warn{color:var(--amber)}.console .info{color:var(--accent2)}
+.progress{height:7px;background:var(--inset);border-radius:9px;overflow:hidden;margin:10px 0}
+.progress span{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--accent),var(--accent2));border-radius:inherit;transition:width .3s}
+
+/* ---------- console client ---------- */
+.tabs{display:flex;gap:4px;border-bottom:1px solid var(--line);margin:14px 0 12px;flex-wrap:wrap}
+.tabs button{border:0;border-bottom:2px solid transparent;background:none;color:var(--muted);padding:9px 12px;cursor:pointer;font:inherit;font-size:13px}
+.tabs button.active{border-color:var(--accent);color:var(--accent);font-weight:600}
+.regkey{margin:10px 0 4px;font:12px Consolas,monospace;color:var(--accent);word-break:break-all}
+.regval{display:grid;grid-template-columns:190px 110px 1fr;gap:10px;font:12.3px Consolas,monospace;padding:5px 10px;border:1px solid var(--line-soft);border-top:0;background:var(--inset)}
+.regval:first-of-type{border-top:1px solid var(--line-soft);border-radius:7px 7px 0 0}
+.regval:last-child{border-radius:0 0 7px 7px}
+.regval .nm{color:var(--ink)}
+.regval .tp{color:var(--muted)}
+.regval.pending{opacity:.5}
+pre.rsop{background:var(--console);border:1px solid var(--line);border-radius:10px;padding:14px 16px;font:12.3px/1.65 Consolas,monospace;color:var(--console-ink);overflow:auto;white-space:pre-wrap;margin:0}
+.effect{display:flex;gap:9px;align-items:flex-start;padding:7px 0;border-top:1px solid var(--line-soft);font-size:12.8px}
+.effect:first-of-type{border-top:0}
+.effect .ic{flex:none;width:20px;height:20px;border-radius:6px;display:grid;place-items:center;font-size:11px;font-weight:800}
+.effect.block .ic{background:color-mix(in srgb,var(--red) 10%,transparent);color:var(--red)}
+.effect.ok .ic{background:color-mix(in srgb,var(--green) 10%,transparent);color:var(--green)}
+.effect.info .ic{background:color-mix(in srgb,var(--accent) 10%,transparent);color:var(--accent)}
+.mchips{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}
+.mchip{border:1px solid var(--line);background:var(--panel);border-radius:10px;padding:8px 13px;cursor:pointer;display:grid;gap:2px;text-align:left}
+.mchip b{font-size:13px}
+.mchip.on{border-color:var(--accent);box-shadow:0 0 0 1px color-mix(in srgb,var(--accent) 20%,transparent)}
+.mchip .sub{font-size:11px;color:var(--muted)}
+
+/* ---------- modal / toast / écrans pleins ---------- */
+.modalback{position:fixed;inset:0;background:var(--modalback);display:none;place-items:center;z-index:50;padding:20px}
+.modalback.open{display:grid}
+.modal{width:min(620px,100%);max-height:86vh;overflow:auto;background:var(--card-grad);border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow);padding:22px}
+.modal ul{margin:8px 0;padding-left:20px}
+.toast{position:fixed;right:22px;bottom:22px;background:var(--panel);border:1px solid color-mix(in srgb,var(--accent) 40%,transparent);color:var(--ink);border-radius:10px;padding:12px 16px;display:none;z-index:60;box-shadow:var(--shadow);max-width:420px;font-size:13px}
+.toast.err{border-color:color-mix(in srgb,var(--red) 55%,transparent)}
+.hcstep{display:flex;gap:10px;align-items:center;padding:6px 0;font-size:13px}
+.hcstep .ic{width:22px;height:22px;flex:none;border-radius:7px;display:grid;place-items:center;font-weight:800;background:color-mix(in srgb,var(--accent) 12%,transparent);color:var(--accent)}
+.hcstep.ok .ic{background:color-mix(in srgb,var(--green) 12%,transparent);color:var(--green)}
+.hcstep.fail .ic{background:color-mix(in srgb,var(--red) 12%,transparent);color:var(--red)}
+.spin{width:14px;height:14px;border:2px solid color-mix(in srgb,var(--accent) 20%,transparent);border-top-color:var(--accent);border-radius:50%;animation:sp 1s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+
+/* ---------- écran de synchronisation ---------- */
+.syncitem{display:flex;gap:10px;align-items:center;padding:5px 0;font-size:13px}
+.syncitem .ic{width:22px;height:22px;flex:none;border-radius:7px;display:grid;place-items:center;font-weight:800;background:color-mix(in srgb,var(--accent) 12%,transparent);color:var(--accent);font-size:11px}
+.syncitem.ok .ic{background:color-mix(in srgb,var(--green) 12%,transparent);color:var(--green)}
+
+/* ---------- Écran de connexion VP (design-login-pro intégré) ---------- */
+.lg-wrap{min-height:calc(100vh - 3px);display:grid;place-items:center;padding:30px 16px;position:relative;overflow:hidden}
+.lg-wrap::before,.lg-wrap::after{content:"";position:absolute;width:55vmax;height:55vmax;border-radius:50%;filter:blur(90px);pointer-events:none;opacity:.5}
+.lg-wrap::before{top:-22vmax;right:-14vmax;background:color-mix(in srgb,var(--accent) 22%,transparent)}
+.lg-wrap::after{bottom:-24vmax;left:-16vmax;background:color-mix(in srgb,var(--accent2) 16%,transparent)}
+.lg-card{position:relative;width:min(470px,100%);background:var(--panel);border:1px solid var(--line);border-radius:24px;box-shadow:var(--shadow);padding:30px 32px;clip-path:polygon(0 0,calc(100% - 40px) 0,100% 40px,100% 100%,0 100%);animation:lg-rise .6s cubic-bezier(.22,1,.36,1) both}
+.lg-card::before{content:"";position:absolute;top:0;right:0;width:42px;height:42px;background:linear-gradient(225deg,color-mix(in srgb,var(--accent) 55%,transparent),transparent 62%);clip-path:polygon(100% 0,0 0,100% 100%)}
+@keyframes lg-rise{from{opacity:0;transform:translateY(18px) scale(.99)}to{opacity:1;transform:none}}
+.lg-head{display:flex;align-items:center;gap:12px;margin-bottom:22px}
+.lg-head img{width:42px;height:42px;border-radius:10px;box-shadow:var(--shadow-sm)}
+.lg-head b{font-size:14.5px}
+.lg-head small{display:block;color:var(--muted);font-size:11.5px;font-weight:400}
+.lg-h1{font-size:22px;letter-spacing:-.4px;margin:0 0 8px;line-height:1.15}
+.lg-sub{color:var(--muted);font-size:12.5px;margin:0 0 18px;max-width:38ch}
+.lg-sso{display:grid;gap:9px}
+.lg-btn{display:inline-flex;align-items:center;justify-content:center;gap:9px;width:100%;min-height:44px;padding:10px 16px;border-radius:999px;border:1px solid var(--line);background:var(--panel);color:var(--ink);font:600 13.5px/1.2 'Segoe UI',system-ui,sans-serif;cursor:pointer;transition:.18s}
+.lg-btn:hover{border-color:var(--accent);color:var(--accent);transform:translateY(-1px)}
+.lg-btn.ghost{font-weight:500;color:var(--muted);min-height:40px}
+.lg-btn.primary{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:700;min-height:48px;box-shadow:0 8px 22px -8px color-mix(in srgb,var(--accent) 60%,transparent)}
+.lg-btn.primary:hover{color:#fff;filter:brightness(1.06)}
+.lg-btn:disabled{opacity:.55;cursor:default;transform:none}
+.lg-divider{display:flex;align-items:center;gap:12px;margin:18px 0;color:var(--muted);font-size:10.5px;font-weight:700;letter-spacing:.09em;text-transform:uppercase}
+.lg-divider::before,.lg-divider::after{content:"";height:1px;flex:1;background:var(--line)}
+.lg-form{display:grid;gap:13px}
+.lg-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.lg-field label{display:block;font-size:11.5px;font-weight:600;margin:0 0 5px 2px}
+.lg-ctl{position:relative}
+.lg-ctl input{width:100%;font:13.5px 'Segoe UI',system-ui,sans-serif;color:var(--ink);background:var(--inset);border:1px solid transparent;border-radius:12px;padding:11px 13px;transition:.18s}
+.lg-ctl input:hover{background:var(--panel2)}
+.lg-ctl input:focus{outline:none;background:var(--input);border-color:var(--accent);box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 16%,transparent)}
+.lg-ctl.has-eye input{padding-right:42px}
+.lg-eye{position:absolute;top:50%;right:7px;translate:0 -50%;width:32px;height:32px;border:0;border-radius:8px;background:transparent;color:var(--muted);cursor:pointer;display:grid;place-items:center}
+.lg-eye:hover{color:var(--ink);background:var(--inset)}
+.lg-err{margin:2px 0 0;font-size:11.5px;color:var(--red)}
+.lg-row{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:12px;color:var(--muted)}
+.lg-row label{display:inline-flex;gap:7px;align-items:center;cursor:pointer}
+.lg-row a{color:var(--muted);text-decoration:none;border-bottom:1px solid transparent;transition:.15s}
+.lg-row a:hover{color:var(--accent);border-bottom-color:var(--accent)}
+.lg-foot{display:flex;align-items:center;justify-content:center;gap:8px;margin-top:20px;padding-top:14px;border-top:1px solid var(--line);font-size:11px;color:var(--muted)}
+.lg-pulse{width:7px;height:7px;border-radius:50%;background:var(--green);animation:lg-pulse 2.2s infinite}
+@keyframes lg-pulse{50%{box-shadow:0 0 0 6px color-mix(in srgb,var(--green) 30%,transparent)}}
+.lg-progress{height:5px;border-radius:99px;background:var(--inset);overflow:hidden;margin-top:16px}
+.lg-progress>span{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--accent),var(--accent2));transition:width .4s cubic-bezier(.22,1,.36,1)}
+.lg-target{font-size:12.5px;color:var(--muted);margin:0 0 12px}
+@media (max-width:520px){.lg-grid{grid-template-columns:1fr}.lg-card{padding:24px 20px}}
+/* ---------- regroupement par département ---------- */
+.dept{margin-top:12px}
+.dept h2{margin:0}
+.dept .meta{font-size:11.5px;color:var(--muted)}
+.dept .tablewrap{border:0;border-top:1px solid var(--line);border-radius:0;margin-top:8px}
+.crudbtn{min-height:27px;padding:2px 9px;font-size:11.5px}
+/* ---------- boîte de dialogue Windows simulée ---------- */
+.winbox{margin-top:10px;border:1px solid color-mix(in srgb,var(--accent) 27%,transparent);border-radius:10px;background:var(--inset);padding:14px 16px;display:flex;gap:12px;align-items:flex-start}
+.winbox.block{border-color:color-mix(in srgb,var(--red) 27%,transparent)}
+.winbox .icb{flex:none;width:30px;height:30px;border-radius:8px;display:grid;place-items:center;font-weight:800;font-size:14px}
+.winbox.block .icb{background:color-mix(in srgb,var(--red) 10%,transparent);color:var(--red)}
+.winbox.okb .icb{background:color-mix(in srgb,var(--green) 10%,transparent);color:var(--green)}
+.winbox.infob .icb{background:color-mix(in srgb,var(--accent) 10%,transparent);color:var(--accent)}
+.winbox .wt{font-weight:700;font-size:13px}
+.winbox .wm{font-size:12.5px;color:var(--muted);margin-top:3px}
+@media(max-width:1100px){.g4{grid-template-columns:repeat(2,1fr)}.g3{grid-template-columns:repeat(2,1fr)}.gpogrid{grid-template-columns:1fr}.settabs{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:860px){.shell{grid-template-columns:1fr}aside{position:static;height:auto}.g2,.g3,.g4{grid-template-columns:1fr}.content{padding:20px 14px 60px}.settabs{grid-template-columns:repeat(2,1fr)}}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important}}
+
+</style>
+</head>
+<body>
+<div class="topline"></div>
+
+<!-- ============================== ÉCRAN INITIAL : CONNEXION + SYNCHRONISATION ============================== -->
+<div id="login-screen">
+  <div class="lg-wrap">
+    <div class="lg-card">
+
+      <!-- Pane 1 · Connexion -->
+      <div id="lg-pane-login">
+        <div class="lg-head">
+          <img src="design-login-pro/assets/logo.jpg" alt="Logo VP">
+          <div><b>VP GPO Manager</b><small>Console d'administration AD · mode test</small></div>
+        </div>
+        <h1 class="lg-h1">Connexion au<br>contrôleur de domaine</h1>
+        <p class="lg-sub">Authentification administrateur sur Active Directory. Simulation locale : aucun contrôleur réel n'est contacté, la structure retournée est celle de <code>demo.local</code>.</p>
+
+        <div class="lg-sso">
+          <button type="button" class="lg-btn" id="lg-entra">
+            <svg viewBox="0 0 23 23" width="17" height="17" aria-hidden="true"><path fill="#f25022" d="M1 1h10v10H1z"/><path fill="#7fba00" d="M12 1h10v10H12z"/><path fill="#00a4ef" d="M1 12h10v10H1z"/><path fill="#ffb900" d="M12 12h10v10H12z"/></svg>
+            <span>Se connecter avec Microsoft Entra ID</span>
+          </button>
+          <button type="button" class="lg-btn ghost" id="lg-win">
+            <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="#4CC2FF" d="M3 5.6 10.4 4.5v7.1H3zM10.4 12.4v7.1L3 18.4v-6zM11.6 4.3 21 3v8.6h-9.4zM21 12.4V21l-9.4-1.3v-7.3z"/></svg>
+            <span>Compte Windows actuel</span>
+          </button>
+        </div>
+
+        <div class="lg-divider">ou compte administrateur AD</div>
+
+        <form id="lg-form" class="lg-form" autocomplete="off" novalidate>
+          <div class="lg-grid">
+            <div class="lg-field">
+              <label for="lg-dc">Contrôleur de domaine ou IP</label>
+              <div class="lg-ctl"><input id="lg-dc" value="dc1.demo.local" spellcheck="false"></div>
+            </div>
+            <div class="lg-field">
+              <label for="lg-domain">Domaine</label>
+              <div class="lg-ctl"><input id="lg-domain" value="demo.local" spellcheck="false"></div>
+            </div>
+          </div>
+          <div class="lg-grid">
+            <div class="lg-field">
+              <label for="lg-user">Utilisateur administrateur</label>
+              <div class="lg-ctl"><input id="lg-user" value="demo" spellcheck="false"></div>
+            </div>
+            <div class="lg-field">
+              <label for="lg-pass">Mot de passe</label>
+              <div class="lg-ctl has-eye">
+                <input id="lg-pass" type="password" placeholder="•••••••••••••">
+                <button type="button" class="lg-eye" id="lg-eye" aria-label="Afficher le mot de passe">
+                  <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M2 12s3.6-6.5 10-6.5S22 12 22 12s-3.6 6.5-10 6.5S2 12 2 12Z"/><circle cx="12" cy="12" r="2.8"/><path id="lg-eye-slash" d="M4 20 20 4" style="display:none"/></svg>
+                </button>
+              </div>
+            </div>
+          </div>
+          <p class="lg-err" id="lg-error" hidden></p>
+          <div class="lg-row">
+            <label><input type="checkbox" id="lg-remember" checked> Mémoriser le profil</label>
+            <a href="#" id="btn-manual">Connexion impossible ? Configurer manuellement</a>
+          </div>
+          <button type="submit" class="lg-btn primary" id="btn-login">Se connecter &amp; synchroniser</button>
+        </form>
+
+        <div class="lg-foot"><span class="lg-pulse"></span><span>Health check prêt — DNS · WinRM · AD DS · compte <code>demo / DemoOnly2026!</code></span></div>
+      </div>
+
+      <!-- Pane 2 · Synchronisation -->
+      <div id="lg-pane-sync" hidden>
+        <h1 class="lg-h1" style="font-size:20px">Synchronisation<br>de l'environnement</h1>
+        <p class="lg-target"><b id="lg-sync-target">demo.local</b> · profil <b id="lg-sync-user">DEMO\demo</b></p>
+        <div id="syncsteps"></div>
+        <div class="lg-progress"><span id="lg-prog"></span></div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ============================== APPLICATION ============================== -->
+<div id="app" class="hidden">
+<div class="shell">
+  <aside>
+    <div class="brand">
+      <div class="brandmark">A</div>
+      <div><b>ADOps GPO Manager</b><br><small>Mode test · postes & départements</small></div>
+    </div>
+    <div class="eyebrow" style="padding:0 10px">FLUX PRINCIPAL</div>
+    <nav class="nav">
+      <button data-page="machines" class="active"><span class="num">1</span> <span data-i18n="nav.machines">Postes clients par département</span> <span class="count" id="nav-mcount">0</span></button>
+      <button data-page="gpos"><span class="num">2</span> <span data-i18n="nav.gpos">GPO à appliquer</span> <span class="count" id="nav-gcount">0</span></button>
+      <button data-page="params"><span class="num">3</span> <span data-i18n="nav.params">Paramètres des GPO</span></button>
+      <button data-page="deploy"><span class="num">4</span> <span data-i18n="nav.deploy">Appliquer aux machines</span></button>
+    </nav>
+    <div class="eyebrow" style="padding:0 10px">VÉRIFICATION (COMME AU RÉEL)</div>
+    <nav class="nav">
+      <button data-page="clients"><span class="num">▣</span> <span data-i18n="nav.clients">Console du poste & test réel</span></button>
+      <button data-page="audit"><span class="num">◷</span> <span data-i18n="nav.audit">Journal d’audit</span></button>
+    </nav>
+    <div class="eyebrow" style="padding:0 10px">APPLICATION</div>
+    <nav class="nav">
+      <button data-page="settings"><span class="num">⚙</span> <span data-i18n="nav.settings">Paramètres</span></button>
+    </nav>
+    <div class="conn">
+      <div class="eyebrow">SESSION DE TEST</div>
+      <strong id="conn-domain">demo.local</strong>
+      <span class="status"><span class="dot"></span>Simulation locale · aucun AD contacté</span>
+      <div class="caption" style="margin-top:8px">DC : <span id="conn-dc">dc1.demo.local</span></div>
+      <div class="caption">Compte : <span id="conn-user">demo</span></div>
+    </div>
+  </aside>
+
+  <div class="main">
+    <header class="toolbar">
+      <div class="searchbox" style="max-width:320px"><span class="si">🔍</span>
+        <input id="topsearch" type="search" placeholder="Rechercher une GPO, un poste…" aria-label="Recherche globale">
+      </div>
+      <div class="toolbar-right">
+        <span class="badge-test" data-i18n="badge.test">MODE TEST — AUCUNE MACHINE RÉELLE N’EST CONTACTÉE</span>
+        <button class="btn small" id="btn-resync" data-i18n="btn.resync">↻ Resynchroniser</button>
+        <button class="btn small danger" id="btn-reset" data-i18n="btn.reset">Réinitialiser</button>
+        <button class="btn small" id="btn-theme-quick" title="Basculer clair / sombre">🌗</button>
+        <div class="userchip"><span class="av">D</span><span><b style="font-size:12px">demo</b><br><small style="font-size:10px">DEMO · détaillant</small></span></div>
+      </div>
+    </header>
+
+    <main class="content">
+
+      <!-- ========== PAGE 1 : POSTES CLIENTS PAR DÉPARTEMENT (structure AD / serveur de fichiers) + CRUD ========== -->
+      <section id="page-machines" class="page active">
+        <span class="tag">ÉTAPE 1 · STRUCTURE AD / SERVEUR DE FICHIERS</span>
+        <h1 data-i18n="page.m1">Postes clients par département</h1>
+        <p class="subtitle">Les machines sont regroupées automatiquement d’après la structure réelle de l’annuaire
+        (<code>OU=Finance</code>, <code>OU=Ressources Humaines</code>, …) et les partages du serveur de fichiers.
+        Chaque poste dispose d’un menu <strong>CRUD</strong> : Consoler (détail), Modifier, Supprimer / Détacher.</p>
+        <div class="row" style="margin-bottom:12px">
+          <div>
+            <button class="btn small" id="sel-all">Tout sélectionner</button>
+            <button class="btn small" id="sel-online">Machines en ligne</button>
+            <button class="btn small" id="sel-none">Tout désélectionner</button>
+          </div>
+          <div>
+            <span class="pill cyan" id="selcount">0 machine sélectionnée</span>
+            <button class="btn small primary" id="btn-addmachine">＋ Ajouter un poste (manuel)</button>
+          </div>
+        </div>
+        <div id="dept-groups"></div>
+        <p class="hint" style="margin-top:10px">Un poste « hors ligne » reste sélectionnable : comme en réel, le déploiement échouera sur lui (machine éteinte) — utile pour tester la gestion d’erreur.</p>
+        <div class="row" style="margin-top:16px">
+          <span class="caption">Étape suivante : choisir les GPO à appliquer.</span>
+          <button class="btn primary" onclick="go('gpos')">Continuer → GPO</button>
+        </div>
+      </section>
+
+      <!-- ========== PAGE 2 : GPO ========== -->
+      <section id="page-gpos" class="page">
+        <span class="tag">ÉTAPE 2</span>
+        <h1 data-i18n="page.m2">GPO à appliquer</h1>
+        <p class="subtitle">Sélectionnez une ou plusieurs stratégies du catalogue (16 modèles réels du projet). Leurs paramètres seront configurés à l’étape suivante.</p>
+        <div class="searchbox"><span class="si">🔍</span>
+          <input id="gpo-search" type="search" placeholder="Rechercher une GPO — nom, catégorie, risque ou portée…" aria-label="Rechercher une GPO">
+        </div>
+        <div class="filters" id="gpo-filters"></div>
+        <div class="row" style="margin-bottom:10px">
+          <span class="pill cyan" id="gpocount">0 GPO sélectionnée</span>
+          <span class="caption" id="gpo-total"></span>
+          <button class="btn small primary" id="btn-owngpo" title="Définir une GPO personnalisée du projet (votre propre GPO)">＋ Ma propre GPO</button>
+        </div>
+        <div class="gpogrid" id="gpogrid"></div>
+        <div class="row" style="margin-top:16px">
+          <button class="btn" onclick="go('machines')">← Machines</button>
+          <button class="btn primary" onclick="go('params')">Continuer → Paramètres</button>
+        </div>
+      </section>
+
+      <!-- ========== PAGE 3 : PARAMÈTRES ========== -->
+      <section id="page-params" class="page">
+        <span class="tag">ÉTAPE 3</span>
+        <h1 data-i18n="page.m3">Paramètres des GPO</h1>
+        <p class="subtitle">Chaque paramètre configuré ici sera appliqué, tel quel, aux machines sélectionnées (valeurs de registre + <code>gpupdate /force</code>).</p>
+        <div id="params-list"></div>
+        <div class="row" style="margin-top:16px">
+          <button class="btn" onclick="go('gpos')">← GPO</button>
+          <button class="btn primary" onclick="go('deploy')">Continuer → Application</button>
+        </div>
+      </section>
+
+      <!-- ========== PAGE 4 : DÉPLOIEMENT ========== -->
+      <section id="page-deploy" class="page">
+        <span class="tag">ÉTAPE 4</span>
+        <h1 data-i18n="page.m4">Appliquer les GPO aux machines</h1>
+        <p class="subtitle">Deux façons d’appliquer : <strong>mode automatisé</strong> — le protocole du projet exécute tout (liaison OU transparente via <code>New-GPLink</code>, paramètres, <code>gpupdate /force</code>, validation) sans réglage manuel pas-à-pas — ou le mode pas-à-pas complet.</p>
+        <div class="card">
+          <span class="switch"><input type="checkbox" id="auto-mode" checked>
+          <span><strong data-i18n="set.auto.hint">APPLICATION AUTOMATISÉE — PROTOCOLE DU PROJET (recommandé)</strong>
+          <div class="caption">L’agent suit la logique et les scripts du projet : ciblage du domaine AD, application et liaison transparentes, mise à jour automatique de la stratégie. Aucune configuration manuelle dans la console.</div></span></span>
+        </div>
+        <div id="auto-zone">
+          <div class="card">
+            <h2>Protocole projet — application automatisée</h2>
+            <div class="steps">
+              <span class="stepchip current"><span class="num">1</span> Cibler le poste / l’OU (déjà fait à l’étape 1)</span>
+              <span class="stepchip"><span class="num">2</span> New-GPLink transparent</span>
+              <span class="stepchip"><span class="num">3</span> Paramètres du projet</span>
+              <span class="stepchip"><span class="num">4</span> gpupdate /force + validation automatiques</span>
+            </div>
+            <div class="row">
+              <span class="caption" id="auto-summary">—</span>
+              <button class="btn primary" id="btn-protocol">▶ Exécuter le protocole du projet</button>
+            </div>
+          </div>
+        </div>
+        <div id="manual-zone" class="hidden">
+        <div class="grid g4" id="impact-cards"></div>
+        <div id="impact-warn"></div>
+        <div class="card" style="margin-top:12px">
+          <h2>Récapitulatif du plan</h2>
+          <div class="tablewrap"><table>
+            <thead><tr><th>Machine</th><th>État</th><th>Session</th><th>GPO appliquées</th></tr></thead>
+            <tbody id="tbody-plan"></tbody>
+          </table></div>
+          <div class="row" style="margin-top:14px">
+            <span class="caption">Mode pas-à-pas : aucune écriture avant confirmation.</span>
+            <button class="btn primary" id="btn-confirm-deploy">Appliquer aux machines sélectionnées</button>
+          </div>
+        </div>
+        </div><!-- /manual-zone -->
+        <div class="card hidden" id="deploy-card">
+          <h2>Déploiement en cours</h2>
+          <div class="progress"><span id="deploy-prog"></span></div>
+          <div class="console" id="deploy-log"></div>
+        </div>
+        <div class="card hidden" id="deploy-result">
+          <div class="row"><h2>Résultat du déploiement</h2><button class="btn primary" onclick="go('clients')">Vérifier sur les postes clients →</button></div>
+          <div class="tablewrap"><table>
+            <thead><tr><th>Machine</th><th>Résultat</th><th>Détail</th></tr></thead>
+            <tbody id="tbody-deployres"></tbody>
+          </table></div>
+        </div>
+      </section>
+
+      <!-- ========== PAGE : POSTES CLIENTS ========== -->
+      <section id="page-clients" class="page">
+        <span class="tag">VÉRIFICATION COMME AU RÉEL</span>
+        <h1 data-i18n="nav.clients">Console du poste & test réel</h1>
+        <p class="subtitle">Ouvrez la console d’un poste pour vérifier ce que les GPO ont réellement appliqué : valeurs de registre, <code>gpresult /r</code>, effets visibles et journal d’événements.</p>
+        <div class="mchips" id="client-chips"></div>
+        <div id="client-console"></div>
+      </section>
+
+      <!-- ========== PAGE : AUDIT ========== -->
+      <section id="page-audit" class="page">
+        <span class="tag">TRAÇABILITÉ</span>
+        <h1 data-i18n="nav.audit">Journal d’audit</h1>
+        <p class="subtitle">Chaque opération du mode test est consignée : auteur, action, cibles, résultat — comme la base SQLite locale de l’application réelle.</p>
+        <div class="card"><div class="tablewrap"><table>
+          <thead><tr><th>Horodatage</th><th>Auteur</th><th>Action</th><th>Cibles</th><th>Résultat</th></tr></thead>
+          <tbody id="tbody-audit"></tbody>
+        </table></div></div>
+      </section>
+
+      <!-- ========== PAGE : PARAMÈTRES (MODULE COMPLET, 6 ONGLETS) ========== -->
+      <section id="page-settings" class="page">
+        <span class="tag">CONFIGURATION DE L’APPLICATION</span>
+        <h1 data-i18n="set.title">Paramètres</h1>
+        <p class="subtitle" data-i18n="set.sub">Mode test, apparence & langues, connexion Active Directory, moteur GPO, journaux et crédits — tout se règle ici, puis « Enregistrer les modifications ».</p>
+
+        <div class="settabs" id="settabs">
+          <button class="settab on" data-t="1"><span class="ic">⌁</span><span data-i18n="set.t1">Mode test & maintenance</span></button>
+          <button class="settab" data-t="2"><span class="ic">◐</span><span data-i18n="set.t2">Apparence & langues</span></button>
+          <button class="settab" data-t="3"><span class="ic">⌂</span><span data-i18n="set.t3">Connexion & AD DS</span></button>
+          <button class="settab" data-t="4"><span class="ic">◈</span><span data-i18n="set.t4">Moteur GPO & backend</span></button>
+          <button class="settab" data-t="5"><span class="ic">◷</span><span data-i18n="set.t5">Journaux & audit</span></button>
+          <button class="settab" data-t="6"><span class="ic">✦</span><span data-i18n="set.t6">À propos & crédits</span></button>
+        </div>
+
+        <!-- ONGLET 1 : MODE TEST & MAINTENANCE -->
+        <div id="set-1" class="setpane">
+          <div class="card">
+            <h2 data-i18n="set.t1">Mode test & maintenance</h2>
+            <label class="param"><span class="switch"><input type="checkbox" id="cfg-testmode" checked>
+              <span><strong data-i18n="badge.test">MODE TEST — AUCUNE MACHINE RÉELLE N’EST CONTACTÉE</strong>
+              <div class="hint" data-i18n="set.testmode.hint">Bac à sable (mocking) : aucune commande PowerShell ni requête Active Directory réelle n’est envoyée. La désactiver exige une connexion AD fonctionnelle.</div></span></span></label>
+            <div class="row" style="margin-top:14px">
+              <div>
+                <button class="btn" id="cfg-resync">↻ <span data-i18n="btn.resync">Resynchroniser</span></button>
+                <span class="caption" data-i18n="set.resync.hint">relance la synchronisation des OU, machines et GPO virtuelles</span>
+              </div>
+              <div>
+                <button class="btn danger" id="cfg-reset">⟲ <span data-i18n="btn.reset">Réinitialiser</span></button>
+                <span class="caption" data-i18n="set.reset.hint">remet l’application à son état d’origine (cache, simulation, configuration)</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ONGLET 2 : APPARENCE & LANGUES -->
+        <div id="set-2" class="setpane hidden">
+          <div class="card">
+            <h2 data-i18n="set.t2">Apparence & langues</h2>
+            <div class="grid g2">
+              <div class="field">
+                <label data-i18n="set.lang.label">LANGUE DE L’INTERFACE</label>
+                <select id="cfg-lang">
+                  <option value="fr">Français (défaut)</option>
+                  <option value="en">English</option>
+                </select>
+                <div class="hint" data-i18n="set.lang.hint">les textes de l’interface se mettent à jour immédiatement</div>
+              </div>
+              <div class="field">
+                <label data-i18n="set.theme.label">THÈME VISUEL</label>
+                <select id="cfg-theme">
+                  <option value="light" selected data-i18n="set.theme.light">Mode clair (défaut)</option>
+                  <option value="dark" data-i18n="set.theme.dark">Mode sombre</option>
+                  <option value="system" data-i18n="set.theme.system">Mode système (aligné sur Windows)</option>
+                </select>
+              </div>
+            </div>
+            <div class="field">
+              <label data-i18n="set.accent.label">COULEUR D’ACCENTUATION (boutons, liens, badges)</label>
+              <div class="accrow" id="cfg-accent">
+                <button class="accopt" data-a="#2563eb" style="background:#2563eb" title="Bleu">B</button>
+                <button class="accopt on" data-a="#0ea56e" style="background:#10a56e" title="Vert émeraude">V</button>
+                <button class="accopt" data-a="#7c3aed" style="background:#7c3aed" title="Violet">V</button>
+                <button class="accopt" data-a="#ea580c" style="background:#ea580c" title="Orange">O</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ONGLET 3 : CONNEXION & AD DS -->
+        <div id="set-3" class="setpane hidden">
+          <div class="card">
+            <h2 data-i18n="set.t3">Connexion & Active Directory</h2>
+            <div class="grid g2">
+              <div class="field"><label data-i18n="set.dc">SERVEUR / CONTRÔLEUR DE DOMAINE (FQDN ou IP)</label><input class="input" id="cfg-dc" value="dc1.demo.local" placeholder="dc1.sarytany.local ou 192.168.1.214"></div>
+              <div class="field"><label data-i18n="set.dns">DOMAINE DNS</label><input class="input" id="cfg-domain" value="demo.local"></div>
+            </div>
+            <div class="field"><label data-i18n="set.netbios">NOM NETBIOS</label><input class="input" id="cfg-netbios" value="DEMO"></div>
+            <label class="switch"><input type="checkbox" id="cfg-currentuser" checked> <span data-i18n="set.curuser">Utiliser le compte Windows actuel</span></label>
+            <div class="grid g2" style="margin-top:10px">
+              <div class="field"><label data-i18n="set.user">NOM D’UTILISATEUR</label><input class="input" id="cfg-user" value="DEMO\demo" placeholder="SARYTANY\demo"></div>
+              <div class="field"><label data-i18n="set.pass">MOT DE PASSE (SecureString, en mémoire)</label><input class="input" id="cfg-pass" type="password" value="DemoOnly2026!"></div>
+            </div>
+            <div class="row" style="margin-top:12px">
+              <button class="btn" id="cfg-testconn">⚡ <span data-i18n="btn.testconn">Tester la connexion</span></button>
+              <span class="caption" id="cfg-testres"></span>
+            </div>
+            <div id="cfg-hc" class="hidden" style="margin-top:10px"></div>
+          </div>
+        </div>
+
+        <!-- ONGLET 4 : MOTEUR GPO & BACKEND -->
+        <div id="set-4" class="setpane hidden">
+          <div class="card">
+            <h2 data-i18n="set.t4">Moteur GPO & backend</h2>
+            <div class="field">
+              <label data-i18n="set.catalog">CATALOGUE GPO BACKEND (dossier ou fichier JSON)</label>
+              <input class="input" id="cfg-catalog" value="backend\ADOps.GpoManager.Templates\Templates\gpo_catalog.json">
+              <div class="hint" data-i18n="set.catalog.hint">les 16 modèles du projet sont embarqués dans cette maquette ; l’application réelle lit ce fichier</div>
+            </div>
+            <div class="grid g2">
+              <div class="field">
+                <label data-i18n="set.applymode">MODE D’APPLICATION</label>
+                <select id="cfg-applymode">
+                  <option value="click" selected data-i18n="set.apply.click">Application directe au clic (assisted)</option>
+                  <option value="confirm" data-i18n="set.apply.confirm">Confirmation explicite obligatoire (défaut réel)</option>
+                </select>
+              </div>
+              <div class="field">
+                <label>TIMEOUT POWERSHELL · SECONDES</label>
+                <input class="input" id="cfg-timeout" type="number" value="120" min="10" max="600" style="max-width:160px">
+              </div>
+            </div>
+            <label class="switch"><input type="checkbox" id="cfg-gpupdate" checked> <span>Force Update — <code>gpupdate /force</code> automatique sur les machines cibles</span></label>
+          </div>
+        </div>
+
+        <!-- ONGLET 5 : JOURNAUX & AUDIT -->
+        <div id="set-5" class="setpane hidden">
+          <div class="card">
+            <div class="row">
+              <h2 data-i18n="set.t5">Journaux & audit</h2>
+              <div>
+                <button class="btn small" id="cfg-expj">⤓ Export .JSON</button>
+                <button class="btn small" id="cfg-expt">⤓ Export .TXT</button>
+              </div>
+            </div>
+            <div class="field" style="max-width:260px">
+              <label data-i18n="set.loglevel">NIVEAU DE JOURNALISATION</label>
+              <select id="cfg-loglevel">
+                <option data-i18n="set.log.e">Erreur</option>
+                <option data-i18n="set.log.w" selected>Avertissement</option>
+                <option data-i18n="set.log.i">Info / Debug</option>
+              </select>
+            </div>
+            <div class="tablewrap"><table>
+              <thead><tr><th>Horodatage</th><th>Auteur</th><th data-i18n="audit.action">Action</th><th data-i18n="audit.targets">Cibles</th><th data-i18n="audit.result">Résultat</th></tr></thead>
+              <tbody id="tbody-audit2"></tbody>
+            </table></div>
+          </div>
+        </div>
+
+        <!-- ONGLET 6 : À PROPOS & CRÉDITS -->
+        <div id="set-6" class="setpane hidden">
+          <div class="card">
+            <h2 data-i18n="set.about">À propos & crédits</h2>
+            <div class="card" style="background:var(--card-grad);margin-top:12px">
+              <div class="row" style="align-items:center">
+                <div style="display:flex;gap:14px;align-items:center">
+                  <div class="brandmark" style="width:56px;height:56px;font-size:20px">V</div>
+                  <div>
+                    <strong style="font-size:17px">Ventso Rajaomanjato</strong>
+                    <div class="caption" data-i18n="set.author.role">Conçu et développé par</div>
+                    <div class="caption">ADOps GPO Manager <span class="pill cyan">v1.0.0</span> <span class="pill grey">Licence MIT</span></div>
+                  </div>
+                </div>
+                <div>
+                  <a class="btn" style="text-decoration:none" href="https://github.com/search?q=Ventso+Rajaomanjato&type=users" target="_blank" rel="noopener">🐙 GitHub</a>
+                  <a class="btn" style="text-decoration:none" href="https://www.linkedin.com/search/results/all/?keywords=Ventso%20Rajaomanjato" target="_blank" rel="noopener">💼 LinkedIn</a>
+                </div>
+              </div>
+              <div class="caption" style="margin-top:12px" data-i18n="set.about.note">Console d’administration centralisée des GPO et de l’annuaire Active Directory — WPF (.NET 10) côté application réelle, maquette HTML5 interactive pour le design.</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="row" style="margin-top:16px">
+          <span class="caption" data-i18n="set.save.hint">La sauvegarde est écrite dans config.json côté application réelle (ici : mémoire locale du navigateur).</span>
+          <button class="btn primary" id="cfg-save">💾 <span data-i18n="btn.save">Enregistrer les modifications</span></button>
+        </div>
+      </section>
+
+    </main>
+  </div>
+</div>
+</div>
+
+<!-- ============================== MODALE DE CONFIRMATION ============================== -->
+<div class="modalback" id="modal-back">
+  <div class="modal">
+    <span class="tag">CONFIRMATION EXPLICITE</span>
+    <h2 style="margin-top:8px" id="modal-title">Appliquer les GPO sélectionnées ?</h2>
+    <div id="modal-body"></div>
+    <div class="notice warn">Simulation : les écritures restent locales à cette page. Dans l’application réelle, cette confirmation précède <code>New-GPLink</code> / l’injection des paramètres.</div>
+    <div class="row" style="margin-top:16px">
+      <button class="btn" id="modal-cancel">Annuler</button>
+      <button class="btn primary" id="modal-ok">Confirmer et appliquer</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toastbox" role="status" aria-live="polite"></div>
+
+<script>
+'use strict';
+/* =====================================================================
+   DONNÉES — 16 modèles réels du catalogue du projet
+   (backend/ADOps.GpoManager.Templates/Templates/*.json)
+   ===================================================================== */
+const ASR_GUIDS = [
+  'BE9BA2D9-53EA-4CDC-84E5-9B1EEEE46550',
+  'D4F940AB-401B-4EFC-AADC-AD5F3C50688A',
+  '5BEB7EFE-FD9A-4556-801D-275E5FFC04CC',
+  'D3E037E1-3EB8-44C8-A917-57927947596D'
+];
+
+const TEMPLATES = [
+{
+  id:'removable-storage-restrictions', name:'Restrictions de stockage amovible (USB)', cat:'Périphériques', scope:'Computer', risk:'Medium',
+  desc:'Restreint l’accès aux clés USB, cartes SD et disques externes via les stratégies RemovableStorageDevices.',
+  params:[{name:'access',label:'Accès aux supports amovibles',type:'Enum',def:'Bloqué',choices:['Accès complet','Lecture seule','Bloqué'],hint:'Classe « disques » : clés USB, cartes SD, disques externes.'}],
+  reg:p=>{const k='HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\RemovableStorageDevices\\{53f56307-b6bf-11d0-94f2-00a0c91efb8b}';
+    if(p.access==='Bloqué')return[{key:k,name:'Deny_All',type:'REG_DWORD',data:1}];
+    if(p.access==='Lecture seule')return[{key:k,name:'Deny_Write',type:'REG_DWORD',data:1}];
+    return[{key:k,name:'Deny_All',type:'REG_DWORD',data:0}];},
+  effects:p=>[{s:p.access==='Accès complet'?'info':'block',t:p.access==='Bloqué'?'Clés USB : lecture et écriture REFUSÉES (Deny_All=1)':p.access==='Lecture seule'?'Clés USB : écriture refusée — lecture seule (Deny_Write=1)':'Clés USB : accès complet, aucune restriction'}]
+},
+{
+  id:'control-panel-settings', name:'Blocage du Panneau de configuration et des Paramètres Windows', cat:'Restrictions', scope:'User', risk:'Low',
+  desc:'Interdit l’ouverture du Panneau de configuration ET de l’application Paramètres (stratégie native NoControlPanel).',
+  params:[{name:'blockControlPanel',label:'Interdire l’accès au Panneau de configuration et aux Paramètres',type:'Boolean',def:true}],
+  reg:p=>p.blockControlPanel?[{key:'HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\Explorer',name:'NoControlPanel',type:'REG_DWORD',data:1}]:[],
+  effects:p=>p.blockControlPanel?[{s:'block',t:'Panneau de configuration et Paramètres Windows : OUVERTURE REFUSÉE (control.exe, ms-settings:, Win+X)'}]:[{s:'info',t:'Aucun blocage — paramètre désactivé'}]
+},
+{
+  id:'shell-restrictions', name:'Restrictions de l’interface Windows (shell)', cat:'Restrictions', scope:'User', risk:'Medium',
+  desc:'Retire des éléments de l’interface : boîte Exécuter, raccourcis Win+, options d’arrêt, verrouillage.',
+  params:[
+    {name:'disableRunDialog',label:'Retirer la boîte Exécuter (Win+R)',type:'Boolean',def:true},
+    {name:'disableWinKeys',label:'Désactiver les raccourcis clavier Win+',type:'Boolean',def:true},
+    {name:'hidePowerCommands',label:'Retirer Arrêter / Redémarrer / Mettre en veille',type:'Boolean',def:false},
+    {name:'disableLockWorkstation',label:'Retirer l’option Verrouiller',type:'Boolean',def:false}
+  ],
+  reg:p=>{const e=[],ke='HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Policies\\Explorer',se='HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Policies\\System';
+    if(p.disableRunDialog)e.push({key:ke,name:'NoRun',type:'REG_DWORD',data:1});
+    if(p.disableWinKeys)e.push({key:ke,name:'NoWinKeys',type:'REG_DWORD',data:1});
+    if(p.hidePowerCommands)e.push({key:ke,name:'NoClose',type:'REG_DWORD',data:1});
+    if(p.disableLockWorkstation)e.push({key:se,name:'DisableLockWorkstation',type:'REG_DWORD',data:1});
+    return e;},
+  effects:p=>{const a=[];
+    if(p.disableRunDialog)a.push({s:'block',t:'Boîte Exécuter (Win+R) : RETIRÉE'});
+    if(p.disableWinKeys)a.push({s:'block',t:'Raccourcis clavier Win+ : DÉSACTIVÉS'});
+    if(p.hidePowerCommands)a.push({s:'block',t:'Arrêter / Redémarrer / Mettre en veille : MASQUÉS'});
+    if(p.disableLockWorkstation)a.push({s:'block',t:'Option Verrouiller la session : MASQUÉE'});
+    if(!a.length)a.push({s:'info',t:'Aucune restriction active'});
+    return a;}
+},
+{
+  id:'cmd-registry-block', name:'Blocage de l’invite de commandes et de l’Éditeur du Registre', cat:'Restrictions', scope:'User', risk:'Medium',
+  desc:'Interdit cmd.exe et regedit.exe pour les utilisateurs ciblés.',
+  params:[
+    {name:'cmdMode',label:'Accès à l’invite de commandes',type:'Enum',def:'Interdit (scripts inclus)',choices:['Interdit (scripts inclus)','Interdit (cmd seule)'],hint:'« Scripts inclus » bloque aussi les .bat/.cmd exécutés par cmd.'},
+    {name:'disableRegistryTools',label:'Interdire l’Éditeur du Registre',type:'Boolean',def:true}
+  ],
+  reg:p=>{const e=[],k='HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Policies\\System';
+    if(p.cmdMode==='Interdit (scripts inclus)')e.push({key:k,name:'DisableCMD',type:'REG_DWORD',data:2});
+    else if(p.cmdMode==='Interdit (cmd seule)')e.push({key:k,name:'DisableCMD',type:'REG_DWORD',data:1});
+    if(p.disableRegistryTools)e.push({key:k,name:'DisableRegistryTools',type:'REG_DWORD',data:1});
+    return e;},
+  effects:p=>{const a=[];
+    if(p.cmdMode==='Interdit (scripts inclus)')a.push({s:'block',t:'cmd.exe : REFUSÉ (y compris scripts .bat/.cmd)'});
+    else if(p.cmdMode==='Interdit (cmd seule)')a.push({s:'block',t:'cmd.exe : REFUSÉ (les scripts restent exécutables)'});
+    if(p.disableRegistryTools)a.push({s:'block',t:'regedit.exe : REFUSÉ'});
+    if(!a.length)a.push({s:'info',t:'Aucun blocage actif'});
+    return a;}
+},
+{
+  id:'screensaver-lock', name:'Verrouillage automatique par écran de veille', cat:'Sessions', scope:'User', risk:'Low',
+  desc:'Force un écran de veille avec mot de passe après un délai d’inactivité.',
+  params:[{name:'timeoutSeconds',label:'Délai d’inactivité avant verrouillage (secondes)',type:'Integer',def:600,min:60,max:86400}],
+  reg:p=>[{key:'HKCU\\Software\\Policies\\Microsoft\\Windows\\Control Panel\\Desktop',name:'ScreenSaveActive',type:'REG_SZ',data:'1'},
+          {key:'HKCU\\Software\\Policies\\Microsoft\\Windows\\Control Panel\\Desktop',name:'ScreenSaverIsSecure',type:'REG_SZ',data:'1'},
+          {key:'HKCU\\Software\\Policies\\Microsoft\\Windows\\Control Panel\\Desktop',name:'ScreenSaveTimeOut',type:'REG_SZ',data:String(p.timeoutSeconds)},
+          {key:'HKCU\\Software\\Policies\\Microsoft\\Windows\\Control Panel\\Desktop',name:'SCRNSAVE.EXE',type:'REG_SZ',data:'C:\\Windows\\System32\\scrnsave.scr'}],
+  effects:p=>[{s:'block',t:'Session verrouillée automatiquement après '+p.timeoutSeconds+' s d’inactivité (écran de veille + mot de passe)'}]
+},
+{
+  id:'autorun-hardening', name:'Désactivation de l’exécution automatique (Autorun/AutoPlay)', cat:'Périphériques', scope:'Computer', risk:'Low',
+  desc:'Désactive l’exécution automatique des lecteurs (protection contre les malwares USB).',
+  params:[{name:'disableAutorun',label:'Désactiver l’exécution automatique',type:'Boolean',def:true}],
+  reg:p=>p.disableAutorun?[{key:'HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\Explorer',name:'NoAutorun',type:'REG_DWORD',data:1},
+    {key:'HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\Explorer',name:'NoDriveTypeAutoRun',type:'REG_DWORD',data:255}]:[],
+  effects:p=>p.disableAutorun?[{s:'block',t:'Autorun / AutoPlay : DÉSACTIVÉS sur tous les lecteurs (NoDriveTypeAutoRun=0xFF)'}]:[{s:'info',t:'Autorun laissé actif'}]
+},
+{
+  id:'powershell-execution-policy', name:'Politique d’exécution des scripts PowerShell', cat:'Applications', scope:'Computer', risk:'High',
+  desc:'Force la politique d’exécution PowerShell machine (MachinePolicy).',
+  params:[{name:'executionPolicy',label:'Politique d’exécution',type:'Enum',def:'RemoteSigned',choices:['Désactivé','AllSigned','RemoteSigned','Unrestricted']}],
+  reg:p=>{const k='HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\PowerShell';
+    if(p.executionPolicy==='Désactivé')return[{key:k,name:'EnableScripts',type:'REG_DWORD',data:0}];
+    return[{key:k,name:'EnableScripts',type:'REG_DWORD',data:1},{key:k,name:'ExecutionPolicy',type:'REG_SZ',data:p.executionPolicy}];},
+  effects:p=>[{s:'block',t:p.executionPolicy==='Désactivé'?'Scripts PowerShell : EXÉCUTION INTERDITE (EnableScripts=0)':'Scripts PowerShell : politique « '+p.executionPolicy+' » imposée par stratégie machine'}]
+},
+{
+  id:'uac-hardening', name:'Renforcement du contrôle de compte d’utilisateur (UAC)', cat:'Système & sécurité', scope:'Computer', risk:'Medium',
+  desc:'Impose le bureau sécurisé pour les élévations et le comportement des utilisateurs standards.',
+  params:[
+    {name:'secureDesktop',label:'Invites d’élévation sur le bureau sécurisé',type:'Boolean',def:true},
+    {name:'standardUserBehavior',label:'Comportement pour les utilisateurs standards',type:'Enum',def:'Refuser automatiquement',choices:['Refuser automatiquement','Demander les informations d’identification']}
+  ],
+  reg:p=>{const k='HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\System';
+    const e=[{key:k,name:'ConsentPromptBehaviorAdmin',type:'REG_DWORD',data:2}];
+    if(p.secureDesktop)e.push({key:k,name:'PromptOnSecureDesktop',type:'REG_DWORD',data:1});
+    e.push({key:k,name:'ConsentPromptBehaviorUser',type:'REG_DWORD',data:p.standardUserBehavior==='Refuser automatiquement'?0:3});
+    return e;},
+  effects:p=>[{s:'block',t:'UAC : bureau sécurisé '+(p.secureDesktop?'ACTIVÉ':'désactivé')+' — utilisateur standard : '+(p.standardUserBehavior==='Refuser automatiquement'?'élévation REFUSÉE automatiquement':'demande d’identifiants d’admin exigée')}]
+},
+{
+  id:'smartscreen-enforcement', name:'Filtrage SmartScreen de Windows', cat:'Système & sécurité', scope:'Computer', risk:'Low',
+  desc:'Impose le niveau SmartScreen pour les fichiers et applications exécutés.',
+  params:[{name:'level',label:'Niveau de filtrage',type:'Enum',def:'Block',choices:['Block','Warn']}],
+  reg:p=>[{key:'HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\System',name:'EnableSmartScreen',type:'REG_DWORD',data:1},
+          {key:'HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\System',name:'ShellSmartScreenLevel',type:'REG_SZ',data:p.level}],
+  effects:p=>[{s:'block',t:p.level==='Block'?'SmartScreen : applications non reconnues BLOQUÉES':'SmartScreen : simple avertissement (Warn)'}]
+},
+{
+  id:'legacy-protocols-hardening', name:'Désactivation des protocoles hérités (SMBv1, LLMNR, NTLMv1)', cat:'Réseau', scope:'Computer', risk:'High',
+  desc:'Désactive SMBv1 et LLMNR, impose NTLMv2 (réduction des attaques par relais et worms type WannaCry).',
+  params:[
+    {name:'disableSmb1',label:'Désactiver le serveur SMBv1',type:'Boolean',def:true},
+    {name:'disableLlmnr',label:'Désactiver la résolution de noms multicast (LLMNR)',type:'Boolean',def:true},
+    {name:'enforceNtlmv2',label:'N’autoriser que NTLMv2',type:'Boolean',def:true}
+  ],
+  reg:p=>{const e=[];
+    if(p.disableSmb1){e.push({key:'HKLM\\SYSTEM\\CurrentControlSet\\Services\\LanmanServer\\Parameters',name:'SMB1',type:'REG_DWORD',data:0});
+      e.push({key:'HKLM\\SYSTEM\\CurrentControlSet\\Services\\mrxsmb10',name:'Start',type:'REG_DWORD',data:4});}
+    if(p.disableLlmnr)e.push({key:'HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows NT\\DNSClient',name:'EnableMulticast',type:'REG_DWORD',data:0});
+    if(p.enforceNtlmv2)e.push({key:'HKLM\\SYSTEM\\CurrentControlSet\\Control\\Lsa',name:'LmCompatibilityLevel',type:'REG_DWORD',data:5});
+    return e;},
+  effects:p=>{const a=[];
+    if(p.disableSmb1)a.push({s:'block',t:'SMBv1 : DÉSACTIVÉ (serveur + client)'});
+    if(p.disableLlmnr)a.push({s:'block',t:'LLMNR : DÉSACTIVÉ (fin des empoisonnements de noms locaux)'});
+    if(p.enforceNtlmv2)a.push({s:'block',t:'NTLM : NTLMv2 uniquement (LmCompatibilityLevel=5)'});
+    if(!a.length)a.push({s:'info',t:'Aucun protocole modifié'});
+    return a;}
+},
+{
+  id:'rdp-lockdown', name:'Verrouillage du Bureau à distance (RDP)', cat:'Réseau', scope:'Computer', risk:'Medium',
+  desc:'Désactive RDP entièrement, ou l’autorise uniquement avec authentification NLA.',
+  params:[{name:'mode',label:'Mode RDP',type:'Enum',def:'Désactivé',choices:['Désactivé','NLA requis']}],
+  reg:p=>{if(p.mode==='Désactivé')return[{key:'HKLM\\SYSTEM\\CurrentControlSet\\Control\\Terminal Server',name:'fDenyTSConnections',type:'REG_DWORD',data:1}];
+    return[{key:'HKLM\\SYSTEM\\CurrentControlSet\\Control\\Terminal Server',name:'fDenyTSConnections',type:'REG_DWORD',data:0},
+           {key:'HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows NT\\Terminal Services',name:'UserAuthentication',type:'REG_DWORD',data:1}];},
+  effects:p=>[{s:'block',t:p.mode==='Désactivé'?'Bureau à distance : DÉSACTIVÉ (fDenyTSConnections=1)':'Bureau à distance : actif, authentification NLA OBLIGATOIRE'}]
+},
+{
+  id:'windows-defender-firewall', name:'Windows Defender et pare-feu Windows', cat:'Système & sécurité', scope:'Computer', risk:'High',
+  desc:'Force l’activation du pare-feu (profil Domaine) et de la protection en temps réel Defender.',
+  params:[
+    {name:'firewallEnabled',label:'Pare-feu activé (profil Domaine)',type:'Boolean',def:true},
+    {name:'realTimeProtectionEnabled',label:'Protection en temps réel Defender',type:'Boolean',def:true}
+  ],
+  reg:p=>{const e=[];
+    if(p.firewallEnabled){e.push({key:'HKLM\\SOFTWARE\\Policies\\Microsoft\\WindowsFirewall\\DomainProfile',name:'EnableFirewall',type:'REG_DWORD',data:1});
+      e.push({key:'HKLM\\SOFTWARE\\Policies\\Microsoft\\WindowsFirewall\\StandardProfile',name:'EnableFirewall',type:'REG_DWORD',data:1});}
+    if(p.realTimeProtectionEnabled){e.push({key:'HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows Defender',name:'DisableAntiSpyware',type:'REG_DWORD',data:0});
+      e.push({key:'HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows Defender\\Real-Time Protection',name:'DisableRealtimeMonitoring',type:'REG_DWORD',data:0});}
+    return e;},
+  effects:p=>{const a=[];
+    if(p.firewallEnabled)a.push({s:'block',t:'Pare-feu Windows : ACTIF (profils Domaine + Standard)'});
+    if(p.realTimeProtectionEnabled)a.push({s:'block',t:'Defender : protection en temps réel ACTIVE'});
+    if(!a.length)a.push({s:'info',t:'Aucun renforcement demandé'});
+    return a;}
+},
+{
+  id:'windows-update', name:'Windows Update (Windows Update ou WSUS)', cat:'Maintenance', scope:'Computer', risk:'Medium',
+  desc:'Configure la source et le comportement des mises à jour automatiques.',
+  params:[
+    {name:'mode',label:'Mode de mise à jour',type:'Enum',def:'Windows Update',choices:['Windows Update','WSUS']},
+    {name:'wuServerUrl',label:'URL du serveur WSUS',type:'Text',def:'http://srv-wsus.demo.local:8530',showIf:p=>p.mode==='WSUS'},
+    {name:'wuStatusServerUrl',label:'URL du serveur de statistiques WSUS',type:'Text',def:'http://srv-wsus.demo.local:8530',showIf:p=>p.mode==='WSUS'},
+    {name:'auOptions',label:'Options de mise à jour automatique',type:'Enum',def:'4',choices:['2','3','4'],hint:'2 : prévenir avant téléchargement · 3 : téléchargement auto, installation manuelle · 4 : installation automatique'}
+  ],
+  reg:p=>{const au='HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\WindowsUpdate\\AU',wu='HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\WindowsUpdate';
+    const e=[{key:au,name:'NoAutoUpdate',type:'REG_DWORD',data:0},{key:au,name:'AUOptions',type:'REG_DWORD',data:Number(p.auOptions)}];
+    if(p.mode==='WSUS'){e.push({key:wu,name:'WUServer',type:'REG_SZ',data:p.wuServerUrl||''});
+      e.push({key:wu,name:'WUStatusServer',type:'REG_SZ',data:p.wuStatusServerUrl||''});
+      e.push({key:wu,name:'UseWUServer',type:'REG_DWORD',data:1});}
+    return e;},
+  effects:p=>[{s:'info',t:p.mode==='WSUS'?'Mises à jour : servies par WSUS ('+p.wuServerUrl+') — AUOptions='+p.auOptions:'Mises à jour : Windows Update direct — AUOptions='+p.auOptions+(p.auOptions==='4'?' (installation automatique)':'')}]
+},
+{
+  id:'browser-url-blocklist', name:'Blocage et autorisation de sites Web (Edge / Chrome)', cat:'Applications', scope:'Computer', risk:'Low',
+  desc:'Applique une liste de sites bloqués et d’exceptions via les stratégies URLBlocklist / URLAllowlist.',
+  params:[
+    {name:'browser',label:'Navigateur concerné',type:'Enum',def:'Edge',choices:['Edge','Chrome','Les deux']},
+    {name:'blockedUrls',label:'URL bloquées',type:'MultilineText',def:'https://jeux.exemple.com\nhttps://paris.exemple.com'},
+    {name:'allowedUrls',label:'Exceptions autorisées',type:'MultilineText',def:'https://intranet.exemple.com'}
+  ],
+  reg:p=>{const e=[],mk=(root,tag,list)=>String(list||'').split(/\n+/).map(s=>s.trim()).filter(Boolean).forEach((u,i)=>e.push({key:root+'\\'+tag,name:String(i+1),type:'REG_SZ',data:u}));
+    if(p.browser==='Edge'||p.browser==='Les deux'){mk('HKLM\\SOFTWARE\\Policies\\Microsoft\\Edge','URLBlocklist',p.blockedUrls);mk('HKLM\\SOFTWARE\\Policies\\Microsoft\\Edge','URLAllowlist',p.allowedUrls);}
+    if(p.browser==='Chrome'||p.browser==='Les deux'){mk('HKLM\\SOFTWARE\\Policies\\Google\\Chrome','URLBlocklist',p.blockedUrls);mk('HKLM\\SOFTWARE\\Policies\\Google\\Chrome','URLAllowlist',p.allowedUrls);}
+    return e;},
+  effects:p=>{const nb=String(p.blockedUrls||'').split(/\n+/).filter(Boolean).length,na=String(p.allowedUrls||'').split(/\n+/).filter(Boolean).length;
+    return[{s:'block',t:p.browser+' : '+nb+' site(s) bloqué(s), '+na+' exception(s) autorisée(s)'}];}
+},
+{
+  id:'asr-exploit-guard', name:'Réduction de la surface d’attaque (Exploit Guard — ASR)', cat:'Système & sécurité', scope:'Computer', risk:'Medium',
+  desc:'Active un jeu de règles ASR Defender (contenu exécutable, macros Office, obfuscation, JS/VBS).',
+  params:[{name:'ruleIds',label:'Règles activées (un GUID par ligne)',type:'MultilineText',def:ASR_GUIDS.join('\n'),hint:'GUID de règles ASR officiels Microsoft.'}],
+  reg:p=>{const e=[{key:'HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows Defender\\Windows Defender Exploit Guard\\ASR',name:'ExploitGuard_ASR_Rules',type:'REG_DWORD',data:1}];
+    String(p.ruleIds||'').split(/\n+/).map(s=>s.trim()).filter(Boolean).forEach(g=>e.push({key:'HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows Defender\\Windows Defender Exploit Guard\\ASR\\Rules',name:g,type:'REG_DWORD',data:1}));
+    return e;},
+  effects:p=>{const n=String(p.ruleIds||'').split(/\n+/).filter(Boolean).length;return[{s:'block',t:'ASR : '+n+' règle(s) de réduction de surface d’attaque ACTIVE(S)'}];}
+},
+{
+  id:'audit-policy-subcategory', name:'Audit avancé — forçage des sous-catégories', cat:'Système & sécurité', scope:'Computer', risk:'Low',
+  desc:'Impose que les paramètres d’audit par sous-catégorie priment sur la stratégie d’audit héritée.',
+  params:[{name:'enableSubcategoryOverride',label:'Forcer la prévalence des sous-catégories',type:'Boolean',def:true}],
+  reg:p=>p.enableSubcategoryOverride?[{key:'HKLM\\SYSTEM\\CurrentControlSet\\Control\\Lsa',name:'SCENoApplyLegacyAuditPolicy',type:'REG_DWORD',data:1}]:[],
+  effects:p=>p.enableSubcategoryOverride?[{s:'block',t:'Audit : les sous-catégories avancées PRIMENT sur la stratégie héritée (SCENoApplyLegacyAuditPolicy=1)'}]:[{s:'info',t:'Paramètre désactivé'}]
+}
+];
+const TBY = Object.fromEntries(TEMPLATES.map(t=>[t.id,t]));
+
+/* OU / départements détectés par la SYNCHRONISATION (structure réelle d’AD DS + serveur de fichiers) */
+const SHARE_TAGS={'Finance':'FIN','Ressources Humaines':'RH','IT':'IT','Production':'PROD','Commercial':'COM','Infrastructure':'INF'};
+const OUS_SYNCED=['Finance','Ressources Humaines','IT','Production','Commercial'];
+const ADMIN_ACCOUNT='admin.demo';
+
+/* Postes clients du labo — VIDE avant la première synchronisation ou une saisie manuelle */
+const MACHINES=[];
+function seedMachines(){
+  MACHINES.length=0;
+  MACHINES.push(
+    {name:'PC-FIN-01',   ip:'192.0.2.21', os:'Windows 11 Pro 23H2',        ou:'demo.local/Finance',            online:true,  session:'std',  stdUser:'bob.demo'},
+    {name:'PC-FIN-02',   ip:'192.0.2.22', os:'Windows 11 Pro 23H2',        ou:'demo.local/Finance',            online:true,  session:'std',  stdUser:'alice.demo'},
+    {name:'PC-RH-01',    ip:'192.0.2.23', os:'Windows 10 Pro 22H2',        ou:'demo.local/Ressources Humaines',online:true,  icmp:false, session:'std', stdUser:'carine.test'},
+    {name:'PC-IT-01',    ip:'192.0.2.24', os:'Windows 11 Pro 23H2',        ou:'demo.local/IT',                 online:true,  session:'std',  stdUser:'bob.demo'},
+    {name:'PC-IT-02',    ip:'192.0.2.25', os:'Windows 11 Pro 23H2',        ou:'demo.local/IT',                 online:true,  session:'admin',stdUser:null},
+    {name:'PC-PROD-01',  ip:'192.0.2.26', os:'Windows 10 Pro 22H2',        ou:'demo.local/Production',         online:false, session:null,   stdUser:'carine.test'},
+    {name:'PC-PROD-02',  ip:'192.0.2.27', os:'Windows 11 Pro 23H2',        ou:'demo.local/Production',         online:true,  session:null,   stdUser:'bob.demo'},
+    {name:'SRV-DEMO-DC1',ip:'192.0.2.10', os:'Windows Server 2019 Standard',ou:'Contrôleur de domaine',        online:true,  dc:true,        session:null, stdUser:null}
+  );
+  MACHINES.forEach(initRun);
+}
+/* La console client cherche la machine par son nom courant (le CRUD peut renommer) */
+function getM(name){return MACHINES.find(m=>m.name===name);}
+/* Filtrage de sécurité du mode test : les GPO utilisateur ciblent le groupe
+   « Utilisateurs standards » — les comptes administrateurs n’en font PAS partie. */
+function isAdminSession(m){return m.session==='admin';}
+function userPolicyAccepted(m){return m.session==='std';}
+function sessionName(m){
+  return m.session==='admin'?ADMIN_ACCOUNT:(m.session==='std'?(m.stdUser||'utilisateur standard'):null);
+}
+function isAdminName(name){return String(name||'').toLowerCase().includes(ADMIN_ACCOUNT.toLowerCase());}
+
+/* =====================================================================
+   ÉTAT + OUTILS
+   ===================================================================== */
+const state = {
+  selM:new Set(), selG:new Set(),
+  params:Object.fromEntries(TEMPLATES.map(t=>[t.id,Object.fromEntries(t.params.map(p=>[p.name,p.def]))])),
+  audit:[], gpoFilter:'*', gpoSearch:'', deploying:false, currentClient:null, currentTab:'applied',
+  synced:false,                     // la synchronisation initiale, depuis l’écran d’accueil, a-t-elle eu lieu ?
+  ous:[]                            // départements détectés (structure de l’AD / du serveur de fichiers)
+};
+/* État d’exécution d’un poste : stratégie appliquée par GPO, en attente, exclue (admin) et événements */
+function initRun(m){
+  m.run={computer:{},user:{},userPending:{},userRej:{},events:[],plan:[]}; // plan = GPO du dernier déploiement
+}
+const $=id=>document.getElementById(id);
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+const now=()=>new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+const riskPill=r=>r==='High'?'<span class="pill red">Risque élevé</span>':r==='Medium'?'<span class="pill warn">Risque modéré</span>':'<span class="pill">Risque faible</span>';
+const scopePill=s=>s==='User'?'<span class="pill cyan">Utilisateur</span>':'<span class="pill grey">Ordinateur</span>';
+function toast(msg,isErr){const e=$('toastbox');e.textContent=msg;e.className='toast'+(isErr?' err':'');e.style.display='block';clearTimeout(window.tt);window.tt=setTimeout(()=>e.style.display='none',3400);}
+const psPath=k=>k.replace(/^HKLM\\/,'HKLM:\\').replace(/^HKCU\\/,'HKCU:\\');
+function fmtVal(e){return e.type==='REG_DWORD'?('0x'+Number(e.data).toString(16).padStart(8,'0')+' ('+e.data+')'):('"'+e.data+'"');}
+function regCountFor(gid){const t=TBY[gid];return t.reg(state.params[gid]).length;}
+
+/* =====================================================================
+   ÉCRAN INITIAL — SYNCHRONISATION (ou saisie manuelle)
+   ===================================================================== */
+const SYNC_STEPS=[
+  ['Résolution DNS','demo.local → 192.0.2.10 (dc1.demo.local)'],
+  ['AD DS — annuaire','connexion LDAP · schéma et comptes accessibles'],
+  ['Unités d’organisation','5 OU de départements détectées (Finance, RH, IT, Production, Commercial)'],
+  ['Serveurs de fichiers','\\\\srv-fichiers · 5 partages départementaux (FIN$, RH$, IT$, PROD$, COM$)'],
+  ['Machines','balayage ICMP 192.0.2.0/24 · 7 postes clients + 1 contrôleur trouvés'],
+  ['Utilisateurs','28 comptes · 27 standards + 1 administrateur (admin.demo)'],
+  ['GPO du domaine','2 stratégies existantes + catalogue de 16 modèles de durcissement']
+];
+$('lg-eye').addEventListener('click',()=>{
+  const p=$('lg-pass'),shown=p.type==='text';
+  p.type=shown?'password':'text';
+  $('lg-eye-slash').style.display=shown?'none':'inline';
+  $('lg-eye').setAttribute('aria-label',shown?'Afficher le mot de passe':'Masquer le mot de passe');
+});
+[$('lg-dc'),$('lg-domain'),$('lg-user'),$('lg-pass')].forEach(i=>i.addEventListener('input',()=>$('lg-error').hidden=true));
+$('lg-entra').addEventListener('click',()=>toast('Microsoft Entra ID : non simulé dans cette maquette — utilisez le compte demo du formulaire.'));
+$('lg-win').addEventListener('click',()=>toast('Compte Windows actuel : non simulé dans cette maquette — utilisez le compte demo du formulaire.'));
+
+/* Connexion → validation → synchronisation animée → application */
+$('lg-form').addEventListener('submit',async(e)=>{
+  e.preventDefault();
+  const dc=$('lg-dc').value.trim(),dom=$('lg-domain').value.trim(),usr=$('lg-user').value.trim(),pwd=$('lg-pass').value;
+  const hostRe=/^((\d{1,3}\.){3}\d{1,3}|[a-z0-9][a-z0-9.-]*\.[a-z]{2,})$/i;
+  const err=
+    !hostRe.test(dc)?'Contrôleur invalide : FQDN (dc1.demo.local) ou IPv4 attendue.':
+    !hostRe.test(dom)?'Nom de domaine invalide (ex. : demo.local).':
+    !usr?"Nom d'utilisateur requis.":
+    pwd.length<4?'Mot de passe requis (4 caractères minimum).':'';
+  if(err){const box=$('lg-error');box.textContent=err;box.hidden=false;return;}
+
+  $('lg-pane-login').hidden=true;
+  $('lg-pane-sync').hidden=false;
+  $('lg-sync-target').textContent=dom;
+  $('lg-sync-user').textContent=((dom.split('.')[0]||'DOM').toUpperCase())+'\\'+usr;
+  const box=$('syncsteps');box.innerHTML='';box.classList.remove('hidden');
+  const bar=$('lg-prog');bar.style.width='0%';
+  for(const [t,d] of SYNC_STEPS){
+    const div=document.createElement('div');div.className='syncitem';
+    div.innerHTML='<span class="ic">…</span><div><strong>'+esc(t)+'</strong> <span class="caption">— '+esc(d)+'</span></div>';
+    box.appendChild(div);await sleep(420);
+    div.classList.add('ok');div.querySelector('.ic').textContent='✓';
+    bar.style.width=Math.round(box.children.length/SYNC_STEPS.length*100)+'%';
+  }
+  await sleep(450);
+  seedMachines();
+  state.synced=true;state.ous=[...OUS_SYNCED];
+  enterApp(true);
+});
+/* Option manuelle : ouvrir l’application sans connexion, saisir les postes à la main */
+$('btn-manual').addEventListener('click',(e)=>{
+  e.preventDefault();
+  enterApp(false);
+  addMachineModal();
+});
+$('btn-resync').addEventListener('click',async()=>{
+  if(!MACHINES.length){showSyncScreen();return;}
+  const btn=$('btn-resync');
+  btn.disabled=true;
+  for(const [t] of SYNC_STEPS){await sleep(140);toast(t+' — à jour');}
+  btn.disabled=false;
+  toast('Synchronisation terminée : OUs, machines, utilisateurs, serveurs de fichiers et GPO sont à jour.');
+});
+function showSyncScreen(){
+  $('app').classList.add('hidden');$('login-screen').classList.remove('hidden');
+  /* retour propre au formulaire : panneaux, étapes et mot de passe réinitialisés */
+  $('lg-pane-sync').hidden=true;$('lg-pane-login').hidden=false;
+  $('syncsteps').innerHTML='';$('lg-prog').style.width='0%';
+  $('lg-pass').value='';$('lg-error').hidden=true;
+}
+function enterApp(fromSync){
+  $('login-screen').classList.add('hidden');$('app').classList.remove('hidden');
+  const dom=$('lg-domain').value.trim()||'demo.local';
+  $('conn-domain').textContent=dom;
+  $('conn-dc').textContent=$('lg-dc').value.trim()||'dc1.demo.local';
+  $('conn-user').textContent=((dom.split('.')[0]||'DEMO').toUpperCase())+'\\'+($('lg-user').value.trim()||'demo');
+  renderAll();go('machines');
+  toast(fromSync
+    ?'Synchronisation terminée : la structure par département vient de l’AD et du serveur de fichiers.'
+    :'Mode manuel : la liste est vide — ajoutez et configurez les postes à la main, ou resynchronisez depuis la barre d’outils.');
+}
+
+/* =====================================================================
+   NAVIGATION
+   ===================================================================== */
+const LABELS={machines:'Postes clients par département',gpos:'GPO à appliquer',params:'Paramètres des GPO',deploy:'Appliquer aux machines',clients:'Console du poste & test réel',audit:'Journal d’audit',settings:'Paramètres'};
+function go(id){
+  document.querySelectorAll('.page').forEach(p=>p.classList.toggle('active',p.id==='page-'+id));
+  document.querySelectorAll('.nav button').forEach(b=>b.classList.toggle('active',b.dataset.page===id));
+  if($('crumb'))$('crumb').textContent=LABELS[id]||id;window.scrollTo({top:0,behavior:'smooth'});
+  if(id==='deploy')renderDeploy();
+  if(id==='params')renderParams();   // CORRECTIF BUG : la page 3 est re-rendue à la navigation
+  if(id==='gpos')renderGpos();       // la recherche / le filtre catégorie sont appliqués à l'arrivée
+  if(id==='clients')renderClients();
+  if(id==='audit')renderAudit();
+}
+document.querySelectorAll('.nav button').forEach(b=>b.addEventListener('click',()=>go(b.dataset.page)));
+
+/* =====================================================================
+   PAGE 1 — POSTES CLIENTS, regroupés par département (AD / serveur de fichiers) + CRUD
+   ===================================================================== */
+function machineStatusPill(m){
+  if(m.dc)return'<span class="pill cyan"><span class="dot"></span>Contrôleur</span>';
+  if(!m.online)return'<span class="pill red"><span class="dot"></span>Hors ligne</span>';
+  if(m.icmp===false)return'<span class="pill warn"><span class="dot"></span>ICMP filtré</span>';
+  return'<span class="pill"><span class="dot"></span>En ligne</span>';
+}
+function appliedCount(m){
+  return Object.keys(m.run.computer).length+Object.keys(m.run.user).length;
+}
+/* Départements dérivés de la structure OU — l’application « s’adapte » à l’annuaire réel */
+function departmentGroups(){
+  const g={};
+  MACHINES.forEach(m=>{
+    if(m.dc){(g['Contrôleur de domaine']=g['Contrôleur de domaine']||{dc:true,ou:'Contrôleur de domaine',list:[]}).list.push(m);return;}
+    (g[m.ou]=g[m.ou]||{ou:m.ou,list:[]}).list.push(m);
+  });
+  return Object.entries(g);
+}
+function shortOu(ou){
+  const parts=String(ou||'').split('/');
+  return parts[parts.length-1];
+}
+function deptShare(ou){
+  const d=shortOu(ou),tag=SHARE_TAGS[d]||d.slice(0,4).toUpperCase();
+  return'\\\\srv-fichiers\\'+tag+'$';
+}
+function deptDn(ou){
+  if(ou==='Contrôleur de domaine')return 'dc=demo,dc=local';
+  const parts=String(ou||'').split('/').filter(Boolean);
+  const ouParts=parts.slice(1); // on ignore la racine du domaine (demo.local)
+  if(!ouParts.length)return 'dc=demo,dc=local';
+  return ouParts.reverse().map(p=>'OU='+p).join(',')+',DC=demo,DC=local';
+}
+function machineRow(m){
+  return'<tr class="'+(m.dc?'dc-row':m.online?'':'offline')+'">'+
+    '<td>'+(m.dc?'<span class="caption">—</span>':'<input type="checkbox" data-m="'+m.name+'" '+(state.selM.has(m.name)?'checked':'')+'>')+'</td>'+
+    '<td><strong>'+esc(m.name)+'</strong>'+(m.session==='admin'?' <span class="pill cyan">admin</span>':'')+'</td>'+
+    '<td>'+machineStatusPill(m)+'</td><td>'+esc(m.ip)+'</td><td>'+esc(m.os)+'</td>'+
+    '<td><span class="caption" style="font-size:11px">'+esc(m.ou)+'</span></td>'+
+    '<td>'+(sessionName(m)?'<span class="pill cyan">'+esc(sessionName(m))+'</span>':'<span class="caption">aucune session</span>')+'</td>'+
+    '<td>'+(appliedCount(m)?'<span class="pill cyan">'+appliedCount(m)+'</span>':'<span class="caption">0</span>')+'</td>'+
+    '<td style="white-space:nowrap">'+
+      '<button class="btn small crudbtn" data-m="'+m.name+'" data-act="detail" title="Ouvrir la console du poste (Lire)">Console</button>'+
+      '<button class="btn small crudbtn" data-m="'+m.name+'" data-act="edit" title="Modifier le poste">Modifier</button>'+
+      '<button class="btn small danger crudbtn" data-m="'+m.name+'" data-act="del" title="Supprimer / Détacher les GPO">🗑</button>'+
+    '</td></tr>';
+}
+function renderMachines(){
+  const host=$('dept-groups');
+  if(!MACHINES.length){
+    host.innerHTML='<div class="card notice warn"><strong>Aucun poste enregistré.</strong><div class="caption">Retournez à l’écran initial pour <b>Synchroniser</b> les données du domaine, ou ajoutez un poste manuellement avec « ＋ Ajouter un poste (manuel) ».</div>'+
+      '<div style="margin-top:10px"><button class="btn small" id="btn-goto-sync">↻ Ouvrir l’écran de synchronisation</button></div></div>';
+    const b=$('btn-goto-sync');if(b)b.addEventListener('click',showSyncScreen);
+    refreshCounts();return;
+  }
+  const groups=departmentGroups();
+  let total=0;
+  host.innerHTML=groups.map(([ou,g])=>{
+    const isDc=g.dc;
+    const pts=g.list.length;total+=pts;
+    const name=isDc?'Contrôleur de domaine (jamais une cible client)':shortOu(ou);
+    const meta=isDc?'DC=demo,DC=local · dc1.demo.local'
+      :deptDn(ou)+' · serveur de fichiers : '+deptShare(ou);
+    const c={f:0,r:0,o:0};
+    g.list.forEach(m=>{m.session==='admin'?c.f++:(appliedCount(m)?c.r++:c.o++);});
+    return'<div class="card dept"><div class="row"><div><h2>'+esc(name)+' <span class="pill grey">'+pts+'</span></h2>'+
+      '<div class="meta">'+esc(meta)+'</div></div>'+
+      '<div><span class="caption">'+c.f+' admin · '+c.r+' avec GPO · '+c.o+' sans GPO</span></div></div>'+
+      '<div class="tablewrap"><table><thead><tr><th style="width:34px"></th><th>Nom</th><th>État</th><th>Adresse IP</th><th>Système</th><th>Chemin OU (AD)</th><th>Session ouverte</th><th>GPO appliquées</th><th>CRUD</th></tr></thead>'+
+      '<tbody>'+(isDc?g.list.map(machineRow).join(''):g.list.map(machineRow).join(''))+'</tbody></table></div></div>';
+  }).join('');
+  host.querySelectorAll('input[data-m]').forEach(cb=>cb.addEventListener('change',()=>{
+    cb.checked?state.selM.add(cb.dataset.m):state.selM.delete(cb.dataset.m);refreshCounts();
+  }));
+  host.querySelectorAll('[data-act]').forEach(b=>b.addEventListener('click',()=>{
+    const m=getM(b.dataset.m);if(!m)return;
+    if(b.dataset.act==='detail'){state.currentClient=m.name;go('clients');}
+    else if(b.dataset.act==='edit')editMachineModal(m);
+    else if(b.dataset.act==='del')deleteMachineModal(m);
+  }));
+  refreshCounts();
+}
+function refreshCounts(){
+  $('selcount').textContent=state.selM.size+' machine'+(state.selM.size>1?'s':'')+' sélectionnée'+(state.selM.size>1?'s':'');
+  $('nav-mcount').textContent=MACHINES.filter(m=>!m.dc).length;
+  $('nav-gcount').textContent=state.selG.size;
+  $('gpocount').textContent=state.selG.size+' GPO sélectionnée'+(state.selG.size>1?'s':'');
+}
+$('sel-all').addEventListener('click',()=>{MACHINES.filter(m=>!m.dc).forEach(m=>state.selM.add(m.name));renderMachines();});
+$('sel-online').addEventListener('click',()=>{state.selM.clear();MACHINES.filter(m=>!m.dc&&m.online).forEach(m=>state.selM.add(m.name));renderMachines();});
+$('sel-none').addEventListener('click',()=>{state.selM.clear();renderMachines();});
+$('btn-addmachine').addEventListener('click',addMachineModal);
+
+/* =====================================================================
+   PAGE 2 — GPO
+   ===================================================================== */
+function renderGpoFilters(){
+  const cats=['*',...new Set(TEMPLATES.map(t=>t.cat))];
+  $('gpo-filters').innerHTML=cats.map(c=>'<button class="chip '+(state.gpoFilter===c?'on':'')+'" data-c="'+esc(c)+'">'+(c==='*'?'Toutes':esc(c))+'</button>').join('');
+  $('gpo-filters').querySelectorAll('.chip').forEach(b=>b.addEventListener('click',()=>{state.gpoFilter=b.dataset.c;renderGpoFilters();renderGpos();}));
+}
+function renderGpos(){
+  const q=state.gpoSearch.trim().toLowerCase();
+  const list=TEMPLATES.filter(t=>{
+    if(state.gpoFilter!=='*'&&t.cat!==state.gpoFilter)return false;
+    if(!q)return true;
+    const riskText={High:'risque élevé',Medium:'risque modéré',Low:'risque faible'}[t.risk]||'';
+    const scopeText=t.scope==='User'?'utilisateur':'ordinateur';
+    return[t.name,t.desc,t.cat,riskText,scopeText].join(' ').toLowerCase().includes(q);
+  });
+  $('gpo-total').textContent=q
+    ?list.length+' correspondance(s) sur '+TEMPLATES.length+' · recherche : « '+state.gpoSearch.trim()+' »'
+    :list.length+' modèle(s) affiché(s) · '+TEMPLATES.length+' au catalogue';
+  $('gpogrid').innerHTML=list.map(t=>
+    '<div class="gpoc '+(state.selG.has(t.id)?'sel':'')+'" data-g="'+t.id+'">'+
+    '<div class="top"><input type="checkbox" '+(state.selG.has(t.id)?'checked':'')+' tabindex="-1">'+
+    '<h3>'+esc(t.name)+'</h3>'+(t.custom?'<span class="pill warn">PROJET · personnalisée</span>':'')+scopePill(t.scope)+'</div>'+
+    '<p>'+esc(t.desc)+'</p>'+
+    '<div class="row"><div>'+riskPill(t.risk)+' <span class="pill grey">'+esc(t.cat)+'</span></div>'+
+    '<span class="caption">'+(t.custom?'<button class="chip" data-delcustom="'+t.id+'" title="Retirer cette GPO personnalisée">✕ Retirer</button> ':t.params.length+' paramètre(s)')+'</span></div></div>').join('')||
+    '<div class="card notice">Aucune GPO ne correspond à la recherche « '+esc(state.gpoSearch)+' ». <div class="caption">Essayez un autre mot-clé, ou réinitialisez le filtre de catégorie. La recherche porte sur le nom, la description, la catégorie (ex. « Système &amp; sécurité »), le risque (ex. « élevé ») et la portée.</div></div>';
+  $('gpogrid').querySelectorAll('[data-delcustom]').forEach(b=>b.addEventListener('click',e=>{
+    e.stopPropagation();
+    const id=b.dataset.delcustom,t=TBY[id];
+    openModal('Retirer « '+t.name+' » ?',
+      '<p class="caption">Cette GPO personnalisée du projet sera retirée du catalogue de la maquette. Les postes sur lesquels elle est déjà appliquée conservent leurs paramètres (détachez-les dans la console d’un poste).</p>',
+      'Retirer la GPO',()=>{
+        const i=TEMPLATES.findIndex(x=>x.id===id);if(i>=0)TEMPLATES.splice(i,1);
+        delete TBY[id];state.selG.delete(id);
+        audit('Suppression d’une GPO personnalisée',t.name);
+        renderGpoFilters();renderGpos();renderParams();refreshCounts();
+        toast('GPO personnalisée retirée du catalogue.');
+      });
+  }));
+  $('gpogrid').querySelectorAll('.gpoc').forEach(c=>c.addEventListener('click',()=>{
+    const g=c.dataset.g;state.selG.has(g)?state.selG.delete(g):state.selG.add(g);renderGpos();refreshCounts();
+    if(document.getElementById('page-params').classList.contains('active'))renderParams(); // la page Paramètres reflète la sélection immédiatement
+  }));
+}
+const gsearch=document.getElementById('gpo-search');
+if(gsearch)gsearch.addEventListener('input',()=>{state.gpoSearch=gsearch.value;renderGpos();});
+
+/* =====================================================================
+   PAGE 3 — PARAMÈTRES
+   ===================================================================== */
+function renderParams(){
+  const sel=[...state.selG];
+  if(!sel.length){
+    $('params-list').innerHTML='<div class="card notice warn"><strong>Aucune GPO sélectionnée.</strong><div class="caption">Revenez à l’étape 2 pour choisir les stratégies à appliquer.</div></div>';
+    return;
+  }
+  $('params-list').innerHTML=sel.map(gid=>{
+    const t=TBY[gid],p=state.params[gid];
+    const ctrls=t.params.map(pp=>{
+      const v=p[pp.name];
+      let ctl='';
+      if(pp.type==='Boolean')
+        ctl='<label class="switch"><input type="checkbox" data-g="'+gid+'" data-p="'+pp.name+'" data-t="Boolean" '+(v?'checked':'')+'><span>'+(v?'Activé':'Désactivé')+'</span></label>';
+      else if(pp.type==='Enum')
+        ctl='<select data-g="'+gid+'" data-p="'+pp.name+'" data-t="Enum">'+pp.choices.map(c=>'<option '+(String(v)===String(c)?'selected':'')+'>'+esc(c)+'</option>').join('')+'</select>';
+      else if(pp.type==='Integer')
+        ctl='<input class="input" style="max-width:170px" type="number" min="'+(pp.min||0)+'" max="'+(pp.max||99999999)+'" value="'+esc(v)+'" data-g="'+gid+'" data-p="'+pp.name+'" data-t="Integer">';
+      else if(pp.type==='MultilineText')
+        ctl='<textarea data-g="'+gid+'" data-p="'+pp.name+'" data-t="MultilineText">'+esc(v)+'</textarea>';
+      else
+        ctl='<input class="input" value="'+esc(v)+'" data-g="'+gid+'" data-p="'+pp.name+'" data-t="Text">';
+      return'<div class="param"><div class="plabel">'+esc(pp.label)+'</div>'+ctl+
+        (pp.hint?'<div class="hint">'+esc(pp.hint)+'</div>':'')+'</div>';
+    }).join('');
+    const writes=t.reg(p).length;
+    return'<div class="card"><div class="row"><div><h3>'+esc(t.name)+'</h3><span class="caption">'+esc(t.cat)+' · '+writes+' valeur(s) de registre par machine</span></div>'+
+      '<div>'+scopePill(t.scope)+riskPill(t.risk)+'</div></div>'+ctrls+'</div>';
+  }).join('');
+  $('params-list').querySelectorAll('[data-g][data-p]').forEach(el=>{
+    el.addEventListener('change',()=>{
+      const g=el.dataset.g,pp=el.dataset.p,t=el.dataset.t;
+      let v=el.value;
+      if(t==='Boolean')v=el.checked;
+      else if(t==='Integer')v=Math.max(0,parseInt(el.value||'0',10));
+      state.params[g][pp]=v;
+      if(el.type==='checkbox'&&el.nextElementSibling)el.nextElementSibling.textContent=el.checked?'Activé':'Désactivé';
+      renderParams();refreshCounts();
+    });
+  });
+}
+
+/* =====================================================================
+   PAGE 4 — DÉPLOIEMENT
+   ===================================================================== */
+function planData(){
+  const machines=MACHINES.filter(m=>state.selM.has(m.name));
+  const gpos=[...state.selG];
+  let writes=0;
+  machines.filter(m=>m.online).forEach(()=>gpos.forEach(g=>writes+=regCountFor(g)));
+  return{machines,gpos,writes};
+}
+function renderDeploy(){
+  const{machines,gpos,writes}=planData();
+  const auto=$('auto-mode')?$('auto-mode').checked:true;
+  $('auto-zone').classList.toggle('hidden',!auto);
+  $('manual-zone').classList.toggle('hidden',auto);
+  $('auto-summary').textContent=machines.length&&gpos.length
+    ?machines.length+' poste(s) × '+gpos.length+' GPO → un seul clic : liaison OU transparente, paramètres, gpupdate /force et validation automatiques.'
+    :'Sélectionnez au moins un poste (étape 1) et une GPO (étape 2) pour exécuter le protocole.';
+  const online=machines.filter(m=>m.online).length,offline=machines.length-online;
+  $('impact-cards').innerHTML=
+    '<div class="card"><div class="label">MACHINES CIBLÉES</div><div class="metric">'+machines.length+'</div><div class="caption">'+online+' en ligne · '+offline+' hors ligne</div></div>'+
+    '<div class="card"><div class="label">GPO APPLIQUÉES</div><div class="metric cyan">'+gpos.length+'</div><div class="caption">'+gpos.filter(g=>TBY[g].scope==='Computer').length+' ordinateur · '+gpos.filter(g=>TBY[g].scope==='User').length+' utilisateur</div></div>'+
+    '<div class="card"><div class="label">PARAMÈTRES CONFIGURÉS</div><div class="metric green">'+gpos.reduce((a,g)=>a+TBY[g].params.length,0)+'</div><div class="caption">totaux sur les GPO sélectionnées</div></div>'+
+    '<div class="card"><div class="label">ÉCRITURES REGISTRE PRÉVUES</div><div class="metric">'+writes+'</div><div class="caption">postes en ligne uniquement</div></div>';
+
+  const warns=[];
+  machines.filter(m=>!m.online).forEach(m=>warns.push(['warn','<strong>'+esc(m.name)+' est hors ligne</strong> — le déploiement échouera sur ce poste (injoignable), comme en réel.']));
+  gpos.filter(g=>TBY[g].scope==='User').forEach(g=>{
+    const std=machines.filter(m=>m.online&&userPolicyAccepted(m)).length;
+    const adm=machines.filter(m=>m.online&&isAdminSession(m)).length;
+    const cie=machines.filter(m=>m.online&&!m.session).length;
+    if(adm)warns.push(['warn','<strong>'+esc(TBY[g].name)+'</strong> (portée Utilisateur) : le compte administrateur <code>admin.demo</code> est EXCLU du filtrage de sécurité (« Utilisateurs standards ») sur '+adm+' poste(s) — la GPO ne s’appliquera PAS à sa session, comme en réel.']);
+    if(cie)warns.push(['warn','<strong>'+esc(TBY[g].name)+'</strong> (portée Utilisateur) : '+cie+' poste(s) en ligne sans session ouverte — la partie utilisateur passera « en attente » jusqu’à la prochaine ouverture de session.']);
+    if(std)warns.push(['info','<strong>'+esc(TBY[g].name)+'</strong> : s’appliquera aux '+std+' session(s) utilisateur standard (groupe « Utilisateurs standards »)']);
+  });
+  gpos.filter(g=>TBY[g].risk==='High').forEach(g=>warns.push(['error','<strong>'+esc(TBY[g].name)+'</strong> présente un risque élevé : relisez les paramètres avant confirmation.']));
+  if(!machines.length||!gpos.length)warns.push(['error','<strong>Plan incomplet :</strong> sélectionnez au moins une machine et une GPO.']);
+  $('impact-warn').innerHTML=warns.map(w=>'<div class="notice '+w[0]+'">'+w[1]+'</div>').join('');
+
+  $('tbody-plan').innerHTML=machines.map(m=>
+    '<tr class="'+(m.online?'':'offline')+'"><td><strong>'+esc(m.name)+'</strong></td><td>'+machineStatusPill(m)+'</td>'+
+    '<td>'+(sessionName(m)?esc(sessionName(m))+(isAdminSession(m)?' <span class="pill cyan">admin</span>':''):'<span class="caption">aucune session</span>')+'</td>'+
+    '<td>'+(gpos.length?gpos.map(g=>'<span class="pill grey" style="margin:1px 3px 1px 0">'+esc(TBY[g].name)+'</span>').join(''):'<span class="caption">—</span>')+'</td></tr>').join('')
+    ||'<tr><td colspan="4" class="caption">Aucune machine sélectionnée.</td></tr>';
+
+  $('btn-confirm-deploy').disabled=!machines.length||!gpos.length||state.deploying;
+}
+/* Modale générique : le déploiement ET les opérations CRUD se servent du même dialogue */
+let modalAction=null;
+function openModal(title,body,okLabel,onOk){
+  $('modal-title').textContent=title;
+  $('modal-body').innerHTML=body;
+  $('modal-ok').textContent=okLabel||'Confirmer';
+  modalAction=onOk||null;
+  $('modal-back').classList.add('open');
+}
+$('btn-confirm-deploy').addEventListener('click',()=>{
+  const{machines,gpos,writes}=planData();
+  openModal('Confirmer le déploiement','<p style="margin:8px 0">Vous allez appliquer <strong>'+gpos.length+' GPO</strong> ('+gpos.map(g=>esc(TBY[g].name)).join(', ')+') sur <strong>'+machines.length+' machine(s)</strong> :</p>'+
+    '<ul>'+machines.map(m=>'<li><strong>'+esc(m.name)+'</strong> — '+esc(m.ip)+' '+(m.online?'':'<span class="pill red">hors ligne</span>')+'</li>').join('')+'</ul>'+
+    '<p class="caption">≈ '+writes+' valeurs de registre, puis <code>gpupdate /force</code> sur chaque poste joignable.</p>','Confirmer et appliquer',runDeploy);
+});
+$('modal-cancel').addEventListener('click',()=>$('modal-back').classList.remove('open'));
+$('modal-ok').addEventListener('click',()=>{$('modal-back').classList.remove('open');const fn=modalAction;modalAction=null;if(fn)fn();});
+
+function dlog(msg,cls){
+  const box=$('deploy-log');
+  const line=document.createElement('div');
+  if(cls)line.className=cls;
+  line.textContent='['+now()+'] '+msg;
+  box.appendChild(line);box.scrollTop=box.scrollHeight;
+}
+async function runDeploy(){
+  const{machines,gpos}=planData();
+  state.deploying=true;$('btn-confirm-deploy').disabled=true;
+  $('deploy-card').classList.remove('hidden');$('deploy-result').classList.add('hidden');
+  const log=$('deploy-log');log.innerHTML='';
+  const prog=$('deploy-prog');prog.style.width='0%';
+  const res={};let done=0;
+  dlog('PS C:\\> $targets = "'+machines.map(m=>m.name).join('","')+'" ; Invoke-GpoDeployment -Gpo '+gpos.length+' -Verbose','info');
+
+  for(const m of machines){
+    const row={name:m.name,status:'…',detail:''};res[m.name]=row;
+    dlog('──────────────────────────────────────────────────────');
+    dlog('▸ ['+m.name+'] Résolution DNS ('+m.ip+')…','info');
+    await sleep(420);
+    if(!m.online){
+      dlog('['+m.name+'] ✗ Échec — hôte injoignable : ping ICMP sans réponse, ARP sans entrée. La machine semble éteinte.','err');
+      dlog('['+m.name+'] WinRM : « Le client WinRM ne peut pas terminer l’opération… Le serveur RPC n’est pas disponible. (0x800706BA) »','err');
+      row.status='fail';row.detail='Machine injoignable (éteinte ?) — RPC/WinRM indisponible';
+      m.run.events.push({ts:now(),src:'Microsoft-Windows-GroupPolicy',id:'—',msg:'Déploiement distant échoué : hôte injoignable.'});
+      done++;prog.style.width=Math.round(done/machines.length*100)+'%';continue;
+    }
+    dlog('['+m.name+'] DNS : '+m.ip+' — résolu ✓','ok');
+    dlog('['+m.name+'] Test WinRM (5985)…');
+    await sleep(480);
+    if(m.icmp===false)dlog('['+m.name+'] ICMP filtré — WinRM répond ✓ (canal d’administration utilisé)','warn');
+    else dlog('['+m.name+'] WinRM 5985 : session ouverte ✓','ok');
+
+    for(const gid of gpos){
+      await sleep(260);
+      writeGpoEntries(m,gid);
+    }
+    m.run.plan=[...new Set([...m.run.plan,...gpos])];   // le plan CUMULE toutes les GPO déjà appliquées sur ce poste
+    dlog('['+m.name+'] gpupdate /force…','info');
+    await sleep(650);
+    dlog('['+m.name+'] « La mise à jour de la stratégie de groupe a réussi. » ✓','ok');
+    m.run.events.push({ts:now(),src:'Microsoft-Windows-GroupPolicy',id:'1502',msg:'Traitement de la stratégie de groupe réussi. '+(Object.keys(m.run.computer).length+Object.keys(m.run.user).length)+' GPO active(s).'});
+    row.status='ok';row.detail=Object.keys(m.run.computer).length+' GPO ordinateur, '+Object.keys(m.run.user).length+' GPO utilisateur'+(Object.keys(m.run.userRej).length?', '+Object.keys(m.run.userRej).length+' exclue(s) (admin)':'')+(Object.keys(m.run.userPending).length?', '+Object.keys(m.run.userPending).length+' en attente de session':'');
+    done++;prog.style.width=Math.round(done/machines.length*100)+'%';
+  }
+
+  const ok=Object.values(res).filter(r=>r.status==='ok').length,fail=machines.length-ok;
+  dlog('──────────────────────────────────────────────────────');
+  dlog('Déploiement terminé : '+ok+' succès, '+fail+' échec(s).',fail?'err':'ok');
+  $('tbody-deployres').innerHTML=machines.map(m=>{
+    const r=res[m.name];
+    return'<tr><td><strong>'+esc(m.name)+'</strong></td><td>'+(r.status==='ok'?'<span class="pill">Succès</span>':'<span class="pill red">Échec</span>')+'</td><td class="caption">'+esc(r.detail||'—')+'</td></tr>';
+  }).join('');
+  $('deploy-result').classList.remove('hidden');
+  state.audit.unshift({ts:new Date().toLocaleString('fr-FR'),author:'DEMO\\demo',action:'Déploiement de GPO',targets:machines.map(m=>m.name).join(', ')+' ← '+gpos.map(g=>TBY[g].name).join(', '),result:fail?fail+' échec(s)':'Réussi'});
+  state.deploying=false;renderMachines();renderDeploy();renderClients();
+  toast('Déploiement terminé : '+ok+' succès, '+fail+' échec(s).',fail>0);
+}
+
+/* =====================================================================
+   PAGE — CONSOLE DU POSTE, TEST EN CONDITIONS RÉELLES (2 sessions) & CRUD
+   ===================================================================== */
+const WINDOWS_REJECT='Cette opération a été annulée en raison des restrictions en vigueur sur cet ordinateur. Contactez votre administrateur système.';
+/* Sondages « tout comme sur une vraie machine » : chaque action est évaluée
+   selon la session OUVERTE sur le poste (utilisateur standard ou administrateur). */
+const PROBES=[
+  {id:'cpl',name:'Panneau de configuration / Paramètres Windows',wtitle:'Panneau de configuration',
+   blocked:m=>!!m.run.user['control-panel-settings']},
+  {id:'run',name:'Boîte Exécuter (Win+R)',wtitle:'Exécuter',
+   blocked:m=>{const a=m.run.user['shell-restrictions'];return !!(a&&a.params.disableRunDialog);}},
+  {id:'cmd',name:'Invite de commandes (cmd.exe)',wtitle:'cmd.exe',
+   blocked:m=>{const a=m.run.user['cmd-registry-block'];return !!(a&&String(a.params.cmdMode).startsWith('Interdit'));}},
+  {id:'regedit',name:'Éditeur du Registre (regedit.exe)',wtitle:'regedit.exe',
+   blocked:m=>{const a=m.run.user['cmd-registry-block'];return !!(a&&a.params.disableRegistryTools);}}
+];
+function testProbe(m,p){
+  if(!m.session)return{s:'infob',ic:'i',wtitle:p.wtitle,
+    msg:'Aucune session ouverte sur '+m.name+'. Ouvrez une session (Bob ou Administrateur) ci-dessus pour tester, comme sur un vrai poste.'};
+  if(isAdminSession(m))return{s:'okb',ic:'✓',wtitle:p.wtitle+' — session '+ADMIN_ACCOUNT,
+    msg:'Ouvert normalement. Le compte '+ADMIN_ACCOUNT+' est administrateur : il n’appartient pas au groupe « Utilisateurs standards » (filtrage de sécurité) — la GPO ne s’applique pas à cette session. Accès complet conservé.'};
+  if(p.blocked(m))return{s:'block',ic:'✕',wtitle:p.wtitle+' — session '+sessionName(m),
+    msg:'BLOQUÉ par la GPO : « '+WINDOWS_REJECT+' » (stratégie « Utilisateurs standards » appliquée en HKCU — l’utilisateur standard se heurte au message de restriction, accès à l’élévation exigé).'};
+  return{s:'infob',ic:'i',wtitle:p.wtitle+' — session '+sessionName(m),
+    msg:'Ouvert sans blocage : aucune stratégie appliquée n’empêche cette action.'};
+}
+function renderClients(){
+  const chips=MACHINES.map(m=>{
+    const n=appliedCount(m);
+    return'<button class="mchip '+(state.currentClient===m.name?'on':'')+'" data-m="'+m.name+'"><b>'+esc(m.name)+'</b>'+
+      '<span class="sub">'+esc(shortOu(m.ou))+' · '+esc(m.ip)+(isAdminSession(m)?' · <b style="color:var(--cyan)">admin</b>':'')+'</span>'+
+      '<span class="sub">'+(m.dc?'contrôleur de domaine':n?n+' GPO active(s)':'aucune GPO')+'</span></button>';
+  }).join('');
+  $('client-chips').innerHTML=chips;
+  $('client-chips').querySelectorAll('.mchip').forEach(c=>c.addEventListener('click',()=>{state.currentClient=c.dataset.m;renderClients();}));
+  const m=getM(state.currentClient);
+  if(!m){$('client-console').innerHTML='<div class="card notice"><strong>Sélectionnez un poste ci-dessus.</strong><div class="caption">Après un déploiement, ouvrez le poste pour vérifier les paramètres appliqués et tester les GPO avec deux sessions sur le même poste.</div></div>';return;}
+  renderClientConsole(m);
+}
+function renderClientConsole(m){
+  const hasContent=appliedCount(m)>0||Object.keys(m.run.userPending).length>0||Object.keys(m.run.userRej).length>0||m.run.events.length>0;
+  let html='<div class="card">'+
+    '<div class="row"><div><span class="tag">CONSOLE DU POSTE · CRUD & TEST RÉEL — '+esc(m.name)+'</span>'+
+    '<h2 style="margin-top:6px">'+esc(m.name)+' <span class="caption" style="font-weight:400">· '+esc(m.ip)+' · '+esc(m.os)+' · '+shortOu(m.ou)+'</span></h2>'+
+    '<div style="margin-top:4px">'+machineStatusPill(m)+' '+(sessionName(m)?'<span class="pill cyan">Session : '+esc(sessionName(m))+(isAdminSession(m)?' — Administrateur':'— Utilisateur standard')+'</span>':'<span class="pill grey">Aucune session interactive</span>')+'</div></div>'+
+    '<div><button class="btn small" id="btn-gpupdate">gpupdate /force</button> '+
+    '<button class="btn small" id="btn-editmachine">Modifier</button> '+
+    '<button class="btn small danger" id="btn-supp">🗑 Supprimer / Détacher</button></div></div>';
+
+  /* Barre de sessions : le MÊME poste, deux comptes du domaine */
+  html+='<div class="notice" style="margin-top:12px"><strong>Session ouverte sur ce poste (test du comportement réel des GPO)</strong>'+
+    '<div class="mchips" style="margin:8px 0 0">'+
+      (m.stdUser?'<button class="mchip '+(m.session==='std'?'on':'')+'" data-sess="std"><b>'+esc(m.stdUser)+'</b><span class="sub">Utilisateur standard — cible des restrictions (Bob)</span></button>':'')+
+      '<button class="mchip '+(m.session==='admin'?'on':'')+'" data-sess="admin"><b>'+ADMIN_ACCOUNT+'</b><span class="sub">Administrateur — exclu du filtrage : tout reste accessible</span></button>'+
+      '<button class="mchip '+(m.session===null||m.session===undefined?'on':'')+'" data-sess="none"><b>Sans session</b><span class="sub">Session fermée — les GPO utilisateur passent « en attente »</span></button>'+
+    '</div>'+
+    '<div class="caption">Ouvrir une différente session re-traite la stratégie de groupe à l’ouverture, comme au réel.</div></div>';
+
+  if(!hasContent){
+    html+='<div class="notice warn" style="margin-top:12px"><strong>Aucune stratégie appliquée sur ce poste.</strong><div class="caption">Lancez un déploiement (étape 4) ou attendez la prochaine session pour la portée Utilisateur.</div></div>';
+  }else{
+    html+='<div class="tabs">'+
+      ['applied|Stratégies appliquées','test|Test en conditions réelles','manage|Gérer les GPO (CRUD)','registry|Registre','rsop|gpresult /r','events|Journal d’événements'].map(x=>{const[v,l]=x.split('|');
+      return'<button data-tab="'+v+'" class="'+(state.currentTab===v?'active':'')+'">'+l+'</button>';}).join('')+'</div>';
+    html+='<div id="client-tab"></div>';
+  }
+  html+='<div id="test-result"></div></div>';
+  $('client-console').innerHTML=html;
+  /* câblage */
+  $('client-console').querySelectorAll('[data-tab]').forEach(b=>b.addEventListener('click',()=>{state.currentTab=b.dataset.tab;state.testResult=null;renderClientConsole(m);}));
+  $('client-console').querySelectorAll('[data-sess]').forEach(b=>b.addEventListener('click',()=>openSession(m,b.dataset.sess)));
+  const gu=$('btn-gpupdate');if(gu)gu.addEventListener('click',()=>gpupdate(m));
+  const em=$('btn-editmachine');if(em)em.addEventListener('click',()=>editMachineModal(m));
+  const sp=$('btn-supp');if(sp)sp.addEventListener('click',()=>deleteMachineModal(m));
+  const tab=$('client-tab');if(tab)renderTab(m,tab);
+}
+/* Changement de session : lesprofils HKCU partent avec la session et la stratégie
+   est retraitée à l’ouverture — admin = exclu (comme le groupe « Utilisateurs standards »). */
+function openSession(m,what){
+  if(m.dc)return;
+  if(what!=='none'&&!m.online){toast(m.name+' est éteinte — impossible d’ouvrir une session (0x800706BA).',true);return;}
+  m.session=what==='none'?null:what;
+  /* fermeture de l’ancien profil utilisateur (HKCU disparaît avec la session) */
+  m.run.user={};m.run.userRej={};m.run.userPending={};
+  if(m.session==='std'){
+    m.run.plan.filter(g=>TBY[g].scope==='User').forEach(g=>{
+      const t=TBY[g],p=state.params[g],entries=t.reg(p);
+      m.run.user[g]={params:{...p},values:entries.map(e=>({...e})),ts:now()};
+    });
+    const n=Object.keys(m.run.user).length;
+    m.run.events.push({ts:now(),src:'Microsoft-Windows-GroupPolicy',id:'1502',msg:'Ouverture de session '+sessionName(m)+' : '+n+' GPO utilisateur appliquée(s) au groupe « Utilisateurs standards ».'});
+    toast('Session '+sessionName(m)+' ouverte : la GPO utilisateur s’applique et BLOQUE les cibles restreintes.');
+  }else if(isAdminSession(m)){
+    m.run.plan.filter(g=>TBY[g].scope==='User').forEach(g=>{
+      m.run.userRej[g]={reason:'Session '+ADMIN_ACCOUNT+' : compte administrateur exclu du groupe « Utilisateurs standards »',ts:now()};
+    });
+    m.run.events.push({ts:now(),src:'Microsoft-Windows-GroupPolicy',id:'1502',msg:'Ouverture de session '+ADMIN_ACCOUNT+' : aucune GPO utilisateur appliquée (filtrage de sécurité — accès complet).'});
+    toast('Session Administrateur : aucune restriction — la GPO ne s’applique pas, comme en réel.');
+  }else{
+    m.run.events.push({ts:now(),src:'Microsoft-Windows-GroupPolicy',id:'1502',msg:'Session fermée : les paramètres utilisateur (HKCU) disparaissent avec le profil.'});
+  }
+  state.testResult=null;
+  renderClientConsole(m);renderMachines();audit('Changement de session',m.name+' ← '+(m.session?(m.session==='admin'?ADMIN_ACCOUNT+' (admin)':sessionName(m)):'session fermée'));
+}
+function policyCards(map,who,m){
+  const ids=Object.keys(map);
+  if(!ids.length)return'';
+  return ids.map(gid=>{
+    const t=TBY[gid],a=map[gid];
+    const whoLabel=who==='computer'?'<span class="pill grey">Ordinateur (HKLM)</span>'
+      :who==='user'?'<span class="pill cyan">Utilisateur · '+esc(sessionName(m)||'')+' (HKCU)</span>'
+      :who==='pending'?'<span class="pill warn">En attente de session</span>'
+      :'<span class="pill red">Exclue — '+esc(a.reason||'filtrage administrateur')+'</span>';
+    return'<div class="card" style="background:var(--input)"><div class="row"><h3>'+esc(t.name)+'</h3><div>'+whoLabel+'</div></div>'+
+      (a.values?'<div class="caption" style="margin:2px 0 6px">Appliqué à '+esc(a.ts)+' · '+a.values.length+' valeur(s) de registre</div>':'')+
+      (a.params?TBY[gid].effects(a.params).map(e=>'<div class="effect '+e.s+'"><span class="ic">'+(e.s==='block'?'✕':e.s==='ok'?'✓':'i')+'</span><span>'+esc(e.t)+'</span></div>').join(''):'')+
+      '</div>';
+  }).join('');
+}
+/* nouvelle table « CRUD » : état courant du poste + actions d’attache/détachement */
+function crudGpoRows(m){
+  const rows=[];
+  Object.keys(m.run.computer).forEach(g=>rows.push({g,kind:'computer'}));
+  Object.keys(m.run.user).forEach(g=>rows.push({g,kind:'user'}));
+  Object.keys(m.run.userPending).forEach(g=>rows.push({g,kind:'userPending'}));
+  Object.keys(m.run.userRej).forEach(g=>rows.push({g,kind:'userRej'}));
+  return rows;
+}
+function renderTab(m,host){
+  if(state.currentTab==='applied'){
+    host.innerHTML=policyCards(m.run.computer,'computer',m)+policyCards(m.run.user,'user',m)+policyCards(m.run.userPending,'pending',m)+policyCards(m.run.userRej,'rej',m);
+  }else if(state.currentTab==='test'){
+    let h='<p class="caption">Même poste, deux comptes de domaine : la GPO ne doit s’appliquer qu’à la session utilisateur standard (Bob), jamais à l’administrateur.</p>';
+    h+=PROBES.map(p=>'<div class="param"><div class="row"><div><div class="plabel">'+esc(p.name)+'</div><div class="hint">Résultat dépendant de la session ouverte ('+(sessionName(m)?esc(sessionName(m)):'sans session')+')</div></div>'+
+      '<button class="btn small " data-probe="'+p.id+'">Tester cette action</button></div></div>').join('');
+    h+='<div id="probe-out"></div>';
+    host.innerHTML=h;
+    host.querySelectorAll('[data-probe]').forEach(b=>b.addEventListener('click',()=>{
+      const p=PROBES.find(x=>x.id===b.dataset.probe);const r=testProbe(m,p);
+      const out=$('probe-out');
+      out.innerHTML='<div class="winbox '+(r.s==='block'?'block':'')+'"><span class="icb '+r.s+'">'+r.ic+'</span><div><div class="wt">'+esc(r.wtitle)+'</div><div class="wm">'+esc(r.msg)+'</div></div></div>';
+      m.run.events.push({ts:now(),src:'Simulation de session',id:'—',msg:(r.s==='block'?'[BLOQUÉ] ':'[OK] ')+r.wtitle+' — testé depuis la session '+(sessionName(m)||'(sans session)')+'.'});
+      audit('Test réel (console)',m.name+' · '+r.wtitle+' · session '+(sessionName(m)||'—'),r.s==='block'?'Restriction':'Réussi');
+    }));
+  }else if(state.currentTab==='manage'){
+    const rows=crudGpoRows(m);
+    if(!rows.length){host.innerHTML='<div class="caption">Aucune GPO attachée à ce poste. Utilisez l’étape 4 pour en appliquer, ou « ＋ Appliquer une GPO de plus à ce poste » ci-dessous.</div>';}
+    else{
+      host.innerHTML='<div class="tablewrap"><table><thead><tr><th>GPO</th><th>Portée</th><th>État sur ce poste</th><th>Action CRUD</th></tr></thead><tbody>'+
+        rows.map(r=>{
+          const t=TBY[r.g];
+          const statePill=r.kind==='computer'?'<span class="pill grey">Ordinateur (HKLM)</span>':r.kind==='user'?'<span class="pill cyan">Appliquée (HKCU)</span>':r.kind==='userPending'?'<span class="pill warn">En attente de session</span>':'<span class="pill red">Exclue (admin)</span>';
+          return'<tr><td><strong>'+esc(t.name)+'</strong></td><td>'+scopePill(t.scope)+'</td><td>'+statePill+'</td>'+
+            '<td><button class="btn small danger crudbtn" data-detach="'+r.g+'">Supprimer / Détacher</button></td></tr>';
+        }).join('')+'</tbody></table></div>'+
+        '<div class="row" style="margin-top:10px"><div><button class="btn small" id="btn-attachmore">＋ Appliquer une GPO de plus à ce poste</button> <button class="btn small danger" id="btn-detachall">Détacher tout</button></div></div>';
+    }
+    host.querySelectorAll('[data-detach]').forEach(b=>b.addEventListener('click',()=>detachGpo(m,b.dataset.detach)));
+    const da=$('btn-detachall');if(da)da.addEventListener('click',()=>detachAllGpo(m));
+    const am=$('btn-attachmore');if(am)am.addEventListener('click',()=>{
+      state.selM=new Set([m.name]);   // cibler UNIQUEMENT ce poste
+      state.selG.clear();
+      go('gpos');
+      toast('Ajout sur '+m.name+' uniquement : cochez une GPO puis passez aux étapes 3-4.');
+    });
+  }else if(state.currentTab==='registry'){
+    const all=[];
+    Object.keys(m.run.computer).forEach(g=>m.run.computer[g].values.forEach(v=>all.push({...v,pend:false})));
+    Object.keys(m.run.user).forEach(g=>m.run.user[g].values.forEach(v=>all.push({...v,hk:'HKCU (session '+sessionName(m)+')',pend:false})));
+    Object.keys(m.run.userPending).forEach(g=>m.run.userPending[g].values.forEach(v=>all.push({...v,hk:'HKCU (prochaine session)',pend:true})));
+    if(!all.length){host.innerHTML='<div class="caption">Aucune valeur de registre.</div>';return;}
+    const groups={};
+    all.forEach(v=>{const k=(v.hk?v.hk+'\\':'')+v.key;(groups[k]=groups[k]||[]).push(v);});
+    host.innerHTML=Object.keys(groups).map(k=>
+      '<div class="regkey">📁 '+esc(k)+'</div>'+
+      groups[k].map(v=>'<div class="regval '+(v.pend?'pending':'')+'"><span class="nm">'+esc(v.name)+'</span><span class="tp">'+esc(v.type)+'</span><span>'+esc(fmtVal(v))+'</span></div>').join('')
+    ).join('');
+  }else if(state.currentTab==='rsop'){
+    const comp=Object.keys(m.run.computer).map(g=>'        '+TBY[g].name).join('\n')||'        (aucune)';
+    const usr=Object.keys(m.run.user).map(g=>'        '+TBY[g].name).join('\n')||'        (aucune — '+(isAdminSession(m)?ADMIN_ACCOUNT+' est exclu du filtrage de sécurité':(m.session?'aucune GPO utilisateur':'pas de session'))+')';
+    const pend=Object.keys(m.run.userPending).map(g=>'        '+TBY[g].name+'   [EN ATTENTE DE SESSION]').join('\n');
+    const rej=Object.keys(m.run.userRej).map(g=>'        '+TBY[g].name+'   [EXCLUE : '+m.run.userRej[g].reason+']').join('\n');
+    host.innerHTML='<pre class="rsop">Microsoft (R) Windows (R) Operating System — Résolution de stratégie de groupe (RSoP)\n'
+      +'SIMULATION · équivalent de « gpresult /r » sur '+m.name+'\n'
+      +'=====================================================================\n\n'
+      +'PARAMÈTRES ORDINATEUR :\n'
+      +'    Poste            : '+m.name+'\n'
+      +'    Domaine          : DEMO\n'
+      +'    OU               : '+m.ou+'\n'
+      +'    Site             : Default-First-Site-Name\n'
+      +'    GPO appliquées :\n'+comp+'\n'
+      +'    Filtrage de sécurité : '+m.name+'$ (autorisé)\n\n'
+      +'PARAMÈTRES UTILISATEUR :\n'
+      +'    Utilisateur      : DEMO\\'+(sessionName(m)||'(aucune session ouverte)')+'\n'
+      +'    GPO appliquées :\n'+usr+'\n'
+      +(pend?'\n    GPO en attente (seront appliquées à la prochaine session) :\n'+pend+'\n':'')
+      +(rej?'\n    GPO non appliquées (filtrage de sécurité) :\n'+rej+'\n':'')
+      +'</pre>';
+  }else if(state.currentTab==='events'){
+    host.innerHTML=m.run.events.length?'<div class="tablewrap"><table><thead><tr><th>Heure</th><th>Source</th><th>ID</th><th>Message</th></tr></thead><tbody>'
+      +m.run.events.map(e=>'<tr><td>'+esc(e.ts)+'</td><td>'+esc(e.src)+'</td><td>'+esc(e.id)+'</td><td>'+esc(e.msg)+'</td></tr>').join('')
+      +'</tbody></table></div>':'<div class="caption">Aucun événement.</div>';
+  }
+}
+async function gpupdate(m){
+  if(m.dc){toast('Le contrôleur n’est pas une cible client.',true);return;}
+  if(!m.online){toast(m.name+' est injoignable — gpupdate impossible (0x800706BA).',true);return;}
+  const moved=Object.keys(m.run.userPending).length;
+  if(moved&&m.session==='std'){
+    Object.assign(m.run.user,m.run.userPending);m.run.userPending={};
+    m.run.events.push({ts:now(),src:'Microsoft-Windows-GroupPolicy',id:'1502',msg:'Traitement réussi : '+moved+' GPO utilisateur appliquée(s) à la session '+sessionName(m)+'.'});
+    toast('« La mise à jour de la stratégie de groupe a réussi. » — '+moved+' GPO utilisateur appliquée(s).');
+  }else if(moved&&!m.session){
+    toast('GPO utilisateur toujours en attente : aucune session ouverte sur '+m.name+'.',true);
+  }else{
+    m.run.events.push({ts:now(),src:'Microsoft-Windows-GroupPolicy',id:'1502',msg:'Traitement de la stratégie de groupe réussi (aucun changement).'});
+    toast('« La mise à jour de la stratégie de groupe a réussi. »');
+  }
+  renderClientConsole(m);renderMachines();
+}
+/* =====================================================================
+   CRUD DES POSTES — Créer / Lire (console) / Modifier / Supprimer-Détacher
+   ===================================================================== */
+function audit(action,targets,result){
+  state.audit.unshift({ts:new Date().toLocaleString('fr-FR'),author:'DEMO\\demo',action:action,targets:targets,result:result||'Réussi'});
+}
+function ouOptions(sel){
+  const names=[...new Set([...state.ous,...MACHINES.filter(m=>!m.dc).map(m=>shortOu(m.ou))])];
+  return names.map(d=>'<option '+(sel===d?'selected':'')+'>'+esc(d)+'</option>').join('');
+}
+function ouForName(d){return'demo.local/'+d;}
+function machineForm(m){
+  return'<div class="field"><label>NOM DU POSTE</label><input class="input" id="f-mname" placeholder="ex. PC-FIN-03" value="'+esc(m?m.name:'')+'"></div>'+
+    '<div class="grid g2"><div class="field"><label>ADRESSE IP</label><input class="input" id="f-mip" placeholder="192.0.2.x" value="'+esc(m?m.ip:'')+'"></div>'+
+    '<div class="field"><label>SYSTÈME</label><select class="input" id="f-mos">'+['Windows 11 Pro 23H2','Windows 11 Pro 24H2','Windows 10 Pro 22H2','Windows Server 2019 Standard'].map(o=>'<option '+((m&&m.os===o)?'selected':'')+'>'+o+'</option>').join('')+'</select></div></div>'+
+    '<div class="field"><label>DÉPARTEMENT / UNITÉ D’ORGANISATION (structure AD · serveur de fichiers)</label>'+
+      (state.ous.length?
+        '<select class="input" id="f-mou">'+ouOptions(m?shortOu(m.ou):null)+'</select>'
+        :'<input class="input" id="f-mou" placeholder="ex. Finance" value="'+esc(m?shortOu(m.ou):'')+'">')+
+      '<div class="hint">'+(state.ous.length?'Départements détectés par la (la dernière) synchronisation : structure réelle de l’AD.':'AUCUN département synchronisé : saisie libre — la synchronisation placera le poste dans la bonne OU ensuite.')+'</div></div>'+
+    '<div class="field"><label>SESSION DE LA MACHINE (pour le test réel)</label><select class="input" id="f-msess">'+
+      ['std|Session utilisateur standard (Bob)','admin|Session Administrateur (admin.demo)','none|Aucune session ouverte'].map(x=>{const[v,l]=x.split('|');
+      return'<option value="'+v+'" '+(m&&((v==='std'&&m.session==='std')||(v==='admin'&&m.session==='admin')||(v==='none'&&!m.session))?'selected':'')+'>'+l+'</option>';}).join('')+'</select></div>'+
+    (m?'':'<div class="notice">Le poste est ajouté manuellement : il complétera (ou remplacera) la structure détectée par la synchronisation.</div>');
+}
+function addMachineModal(){
+  openModal('Ajouter un poste client (manual)',machineForm(null),'Créer le poste',()=>{
+    const name=($('f-mname').value||'').trim().toUpperCase()||'PC-MANUEL-01';
+    if(MACHINES.some(x=>x.name.toLowerCase()===name.toLowerCase())){toast('Un poste porte déjà ce nom : modifiez-le.',true);return;}
+    const dept=($('f-mou').value||'Non classé').trim();
+    const sess=$('f-msess').value;
+    const m={name:name,ip:($('f-mip').value||'192.0.2.99').trim(),os:$('f-mos').value,
+      ou:ouForName(dept),online:true,session:sess==='std'?'std':sess==='admin'?'admin':null,
+      stdUser:sess==='std'?('bob.'+dept.slice(0,4).toLowerCase()+'.test'):null};
+    initRun(m);MACHINES.push(m);
+    if(sess==='admin')m.stdUser=null;
+    audit('Création de poste (CRUD)',name+' · '+dept+' · '+m.ip);
+    renderMachines();renderClients();
+    toast('Poste '+name+' créé dans « '+dept+' ».');
+  });
+}
+function editMachineModal(m){
+  openModal('Modifier « '+m.name+' »',machineForm(m),'Enregistrer les modifications',()=>{
+    const name=($('f-mname').value||m.name).trim();
+    const dept=($('f-mou').value||shortOu(m.ou)).trim();
+    const sess=$('f-msess').value;
+    const renamed=name!==m.name;
+    m.name=name.toUpperCase();
+    m.ip=($('f-mip').value||m.ip).trim();
+    m.os=$('f-mos').value;
+    m.ou=ouForName(dept);
+    const wantSess=sess==='std'?'std':sess==='admin'?'admin':null;
+    if(wantSess!==m.session){openSession(m,wantSess);}
+    if(m.session==='std'&&!m.stdUser)m.stdUser='bob.demo';
+    audit('Modification de poste (CRUD)',m.name+' · '+dept+' · session '+(sessionName(m)||'—'));
+    renderMachines();renderClients();
+    toast('Poste « '+m.name+' » mis à jour'+(renamed?' (ancien nom conservé dans l’audit)':'')+'.');
+  });
+  if(m.dc)toast('Le contrôleur de domaine n’est pas modifiable — c’est la source de vérité AD.',true);
+}
+function deleteMachineModal(m){
+  const nG=crudGpoRows(m).length;
+  openModal('Supprimer / Détacher — '+m.name,
+   '<p class="caption" style="margin:8px 0">Choisissez l’action à appliquer à ce poste :</p>'+
+   '<label class="switch"><input type="radio" name="delmode" value="detach" '+(nG?'checked':'disabled')+'> <span>Détacher les '+nG+' GPO appliquée(s) sur '+esc(m.name)+' (sans supprimer le poste)</span></label>'+
+   '<label class="switch" style="margin-top:8px"><input type="radio" name="delmode" value="delete"> <span>Supprimer entièrement le poste du parc ('+esc(m.name)+')</span></label>'+
+   '<div class="notice warn" style="margin-top:10px">Le détachement retire les valeurs de registre liées et les liens du poste — opération consignée dans l’audit, comme au réel (Remove-GPLink).</div>',
+   'Exécuter',()=>{
+    const oldM=m.name;
+    const mode=(document.querySelector('input[name=delmode]:checked')||{}).value||'detach';
+    if(mode==='detach'){
+      detachAllGpo(m,true);
+    }else{
+      MACHINES.splice(MACHINES.indexOf(m),1);
+      if(state.currentClient===oldM)state.currentClient=null;
+      state.selM.delete(oldM);
+      audit('Suppression de poste (CRUD)',oldM);
+      renderMachines();renderClients();
+      toast('Poste '+oldM+' supprimé du parc.');
+    }
+  });
+}
+function detachGpo(m,gid){
+  ['computer','user','userPending','userRej'].forEach(k=>delete m.run[k][gid]);
+  m.run.plan=m.run.plan.filter(g=>g!==gid);
+  const t=TBY[gid];
+  m.run.events.push({ts:now(),src:'Microsoft-Windows-GroupPolicy',id:'—',msg:'GPO « '+t.name+' » DÉTACHÉE de '+m.name+' : valeurs de registre retirées + Remove-GPLink.'});
+  audit('Détachement GPO (CRUD)',m.name+' ← '+t.name);
+  renderClientConsole(m);renderMachines();
+  toast('GPO « '+t.name+' » détachée de '+m.name+'.');
+}
+function detachAllGpo(m,silent){
+  const n=crudGpoRows(m).length;
+  ['computer','user','userPending','userRej'].forEach(k=>m.run[k]={});
+  m.run.plan=[];
+  m.run.events.push({ts:now(),src:'Microsoft-Windows-GroupPolicy',id:'—',msg:n+' GPO détachée(s) de '+m.name+' (Remove-GPLink sur l’OU / machine).'});
+  if(!silent)audit('Détachement GPO (CRUD)',m.name+' ← '+n+' GPO');
+  renderClientConsole(m);renderMachines();
+  if(!silent)toast(n+' GPO détachée(s) de '+m.name+'.');
+}
+
+/* =====================================================================
+   PAGE — AUDIT
+   ===================================================================== */
+function renderAudit(){
+  $('tbody-audit').innerHTML=state.audit.length?state.audit.map(a=>
+    '<tr><td>'+esc(a.ts)+'</td><td>'+esc(a.author)+'</td><td>'+esc(a.action)+'</td><td class="caption" style="max-width:430px">'+esc(a.targets)+'</td>'+
+    '<td>'+(a.result==='Réussi'?'<span class="pill">Réussi</span>':'<span class="pill warn">'+esc(a.result)+'</span>')+'</td></tr>').join('')
+    :'<tr><td colspan="5" class="caption">Aucune opération consignée pour le moment.</td></tr>';
+}
+
+/* =====================================================================
+   MODULE PARAMÈTRES — thèmes, accent, langues, connexion, export, sauvegarde
+   ===================================================================== */
+state.lang='fr';state.theme='light';state.accent='#0ea56e';
+const ACCENTS={
+  '#2563eb':{light:['#2563eb','#3b82f6'],dark:['#60a5fa','#93c5fd']},
+  '#0ea56e':{light:['#0f9d6e','#17c98b'],dark:['#2fe0a8','#5cf0c4']},
+  '#7c3aed':{light:['#7c3aed','#8b5cf6'],dark:['#a78bfa','#c4b5fd']},
+  '#ea580c':{light:['#ea580c','#f97316'],dark:['#fb923c','#fdba74']}
+};
+function applyTheme(v){
+  state.theme=v;
+  let eff=v;
+  if(v==='system')eff=matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';
+  document.documentElement.dataset.theme=eff;
+  applyAccent(state.accent);
+}
+function applyAccent(a){
+  state.accent=a;
+  const p=ACCENTS[a]||ACCENTS['#0ea56e'];
+  const pair=document.documentElement.dataset.theme==='dark'?p.dark:p.light;
+  document.documentElement.style.setProperty('--accent',pair[0]);
+  document.documentElement.style.setProperty('--accent2',pair[1]);
+  document.querySelectorAll('.accopt').forEach(b=>b.classList.toggle('on',b.dataset.a===a));
+}
+const mq=matchMedia('(prefers-color-scheme: dark)');
+mq.addEventListener('change',()=>{if(state.theme==='system')applyTheme('system');});
+/* Bascule rapide 🌗 dans la barre d’outils */
+$('btn-theme-quick').addEventListener('click',()=>{
+  const eff=document.documentElement.dataset.theme;
+  applyTheme(eff==='dark'?'light':'dark');
+  const sel=$('cfg-theme');if(sel)sel.value=state.theme;
+});
+/* — Onglets du module Paramètres — */
+$('settabs').querySelectorAll('.settab').forEach(b=>b.addEventListener('click',()=>{
+  document.querySelectorAll('.settab').forEach(x=>x.classList.toggle('on',x===b));
+  document.querySelectorAll('.setpane').forEach(p=>p.classList.toggle('hidden',p.id!=='set-'+b.dataset.t));
+}));
+document.querySelector('#settabs .settab').click(); // ouvre l’onglet 1 par défaut
+/* — Apparence — */
+$('cfg-theme').addEventListener('change',()=>applyTheme($('cfg-theme').value));
+$('cfg-accent').querySelectorAll('.accopt').forEach(b=>b.addEventListener('click',()=>applyAccent(b.dataset.a)));
+$('cfg-testmode').addEventListener('change',()=>{
+  document.querySelector('.badge-test').style.visibility=$('cfg-testmode').checked?'visible':'hidden';
+  if(!$('cfg-testmode').checked)toast('Mode test désactivé dans la maquette : l’application réelle exigera une connexion AD DS fonctionnelle.',true);
+});
+$('cfg-resync').addEventListener('click',()=>$('btn-resync').click());
+$('cfg-reset').addEventListener('click',()=>$('btn-reset').click());
+/* — Connexion & AD DS : test simulé (health check) — */
+$('cfg-testconn').addEventListener('click',async()=>{
+  const box=$('cfg-hc');box.classList.remove('hidden');box.innerHTML='';
+  const steps=[
+    ['Résolution DNS',$('cfg-dc').value+' résolu'],
+    ['Accès AD DS','domaine '+$('cfg-domain').value+' · LDAP OK'],
+    ['NetBIOS',$('cfg-netbios').value+' reconnu'],
+    ['Authentification',$('cfg-currentuser').checked?('compte Windows actuel · '+$('cfg-user').value):('compte explicite · '+$('cfg-user').value)]
+  ];
+  for(const [t,d] of steps){
+    const div=document.createElement('div');div.className='hcstep';
+    div.innerHTML='<span class="ic">…</span><div><strong>'+esc(t)+'</strong> <span class="caption">— '+esc(d)+'</span></div>';
+    box.appendChild(div);await sleep(300);
+    div.classList.add('ok');div.querySelector('.ic').textContent='✓';
+  }
+  $('cfg-testres').textContent='Communication AD DS validée (simulation)';
+  audit('Test de connexion (Paramètres)','DC='+$('cfg-dc').value+' · domaine='+$('cfg-domain').value);
+  renderAudit();toast('Connexion validée — aucun AD réel n’a été contacté.');
+});
+/* — Auditorat : rendu du tableau dans l’onglet 5 aussi — */
+const _renderAudit=renderAudit;
+renderAudit=function(){
+  _renderAudit();
+  const t2=$('tbody-audit2');
+  if(t2)t2.innerHTML=state.audit.length?state.audit.map(a=>
+    '<tr><td>'+esc(a.ts)+'</td><td>'+esc(a.author)+'</td><td>'+esc(a.action)+'</td><td class="caption" style="max-width:430px">'+esc(a.targets)+'</td>'+
+    '<td>'+(a.result==='Réussi'?'<span class="pill">Réussi</span>':'<span class="pill warn">'+esc(a.result)+'</span>')+'</td></tr>').join('')
+    :'<tr><td colspan="5" class="caption">Aucune opération consignée pour le moment.</td></tr>';
+};
+/* — Export des journaux (.JSON / .TXT) — */
+function downloadLog(ext){
+  const data=ext==='json'?JSON.stringify(state.audit,null,2)
+    :state.audit.map(a=>[a.ts,a.author,a.action,a.targets,a.result].join(' | ')).join('\n');
+  const name=(ext==='json'?'audit-adops-':'audit-adops-')+new Date().toISOString().slice(0,10)+'.'+ext;
+  const blob=new Blob([data],{type:ext==='json'?'application/json':'text/plain;charset=utf-8'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);a.download=name;a.click();
+  setTimeout(()=>URL.revokeObjectURL(a.href),2000);
+  toast('Journal exporté : '+name);
+}
+$('cfg-expj').addEventListener('click',()=>downloadLog('json'));
+$('cfg-expt').addEventListener('click',()=>downloadLog('txt'));
+/* — Sauvegarde / chargement de la configuration (config.json simulé) — */
+const CV=id=>{const el=$(id);if(!el)return null;return el.type==='checkbox'?el.checked:el.value;};
+function saveCfg(){
+  const cfg={lang:state.lang,theme:state.theme,accent:state.accent,
+    testmode:CV('cfg-testmode'),dc:CV('cfg-dc'),domain:CV('cfg-domain'),netbios:CV('cfg-netbios'),
+    currentuser:CV('cfg-currentuser'),user:CV('cfg-user'),catalog:CV('cfg-catalog'),
+    applymode:CV('cfg-applymode'),timeout:CV('cfg-timeout'),gpupdate:CV('cfg-gpupdate'),loglevel:CV('cfg-loglevel')};
+  try{localStorage.setItem('adops.cfg',JSON.stringify(cfg));toast('Paramètres enregistrés (config.json simulé via le stockage local).');}
+  catch(e){toast('Impossible d’enregistrer localement : '+e.message,true);}
+  applyLang(cfg.lang);applyTheme(cfg.theme);applyAccent(cfg.accent);
+  audit('Sauvegarde des paramètres','thème='+cfg.theme+' · accent='+cfg.accent+' · langue='+cfg.lang);
+  renderAudit();
+}
+$('cfg-save').addEventListener('click',saveCfg);
+function loadCfg(){
+  try{
+    const c=JSON.parse(localStorage.getItem('adops.cfg')||'null');if(!c)return;
+    const set=(id,v)=>{const el=$(id);if(el==null||v==null)return;if(el.type==='checkbox')el.checked=!!v;else el.value=v;};
+    set('cfg-testmode',c.testmode);set('cfg-dc',c.dc);set('cfg-domain',c.domain);set('cfg-netbios',c.netbios);
+    set('cfg-currentuser',c.currentuser);set('cfg-user',c.user);set('cfg-catalog',c.catalog);
+    set('cfg-applymode',c.applymode);set('cfg-timeout',c.timeout);set('cfg-gpupdate',c.gpupdate);set('cfg-loglevel',c.loglevel);
+    if(c.lang&&I18N[c.lang]){state.lang=c.lang;}
+    if(c.theme){state.theme=c.theme;}
+    if(c.accent&&ACCENTS[c.accent]){state.accent=c.accent;}
+  }catch(e){}
+}
+/* — Diagnostic de la recherche globale (barre haut) — */
+const tsearch=$('topsearch');
+if(tsearch){
+  tsearch.addEventListener('input',()=>{state.gpoSearch=tsearch.value;if($('gpo-search'))$('gpo-search').value=tsearch.value;renderGpos();});
+  tsearch.addEventListener('keydown',e=>{if(e.key==='Enter')go('gpos');});
+}
+
+/* — Langues : dictionnaire FR/EN des textes principaux — */
+const I18N={
+ fr:{
+  'nav.machines':'Postes clients par département','nav.gpos':'GPO à appliquer','nav.params':'Paramètres des GPO',
+  'nav.deploy':'Appliquer aux machines','nav.clients':'Console du poste & test réel','nav.audit':'Journal d’audit','nav.settings':'Paramètres',
+  'badge.test':'MODE TEST — AUCUNE MACHINE RÉELLE N’EST CONTACTÉE','btn.resync':'↻ Resynchroniser','btn.reset':'Réinitialiser',
+  'set.title':'Paramètres','set.sub':'Mode test, apparence & langues, connexion Active Directory, moteur GPO, journaux et crédits — tout se règle ici, puis « Enregistrer les modifications ».',
+  'set.t1':'Mode test & maintenance','set.t2':'Apparence & langues','set.t3':'Connexion & AD DS','set.t4':'Moteur GPO & backend','set.t5':'Journaux & audit','set.t6':'À propos & crédits',
+  'set.testmode.hint':'Bac à sable (mocking) : aucune commande PowerShell ni requête Active Directory réelle n’est envoyée. La désactiver exige une connexion AD fonctionnelle.',
+  'set.resync.hint':'relance la synchronisation des OU, machines et GPO virtuelles',
+  'set.reset.hint':'remet l’application à son état d’origine (cache, simulation, configuration)',
+  'set.lang.label':'LANGUE DE L’INTERFACE','set.lang.hint':'les textes de l’interface se mettent à jour immédiatement',
+  'set.theme.label':'THÈME VISUEL','set.theme.light':'Mode clair (défaut)','set.theme.dark':'Mode sombre','set.theme.system':'Mode système (aligné sur Windows)',
+  'set.accent.label':'COULEUR D’ACCENTUATION (boutons, liens, badges)',
+  'set.dc':'SERVEUR / CONTRÔLEUR DE DOMAINE (FQDN ou IP)','set.dns':'DOMAINE DNS','set.netbios':'NOM NETBIOS',
+  'set.curuser':'Utiliser le compte Windows actuel','set.user':'NOM D’UTILISATEUR','set.pass':'MOT DE PASSE (SecureString, en mémoire)',
+  'btn.testconn':'Tester la connexion',
+  'set.catalog':'CATALOGUE GPO BACKEND (dossier ou fichier JSON)','set.catalog.hint':'les 16 modèles du projet sont embarqués dans cette maquette ; l’application réelle lit ce fichier',
+  'set.applymode':'MODE D’APPLICATION','set.apply.click':'Application directe au clic (assisted)','set.apply.confirm':'Confirmation explicite obligatoire (défaut réel)',
+  'set.loglevel':'NIVEAU DE JOURNALISATION','set.log.e':'Erreur','set.log.w':'Avertissement','set.log.i':'Info / Debug',
+  'audit.action':'Action','audit.targets':'Cibles','audit.result':'Résultat',
+  'set.about':'À propos & crédits','set.author.role':'Conçu et développé par','set.about.note':'Console d’administration centralisée des GPO et de l’annuaire Active Directory — WPF (.NET 10) côté application réelle, maquette HTML5 interactive pour le design.',
+  'set.save.hint':'La sauvegarde est écrite dans config.json côté application réelle (ici : mémoire locale du navigateur).','btn.save':'Enregistrer les modifications',
+  'page.m1':'Postes clients par département','page.m2':'GPO à appliquer','page.m3':'Paramètres des GPO','page.m4':'Appliquer les GPO aux machines',
+  'set.auto.hint':'APPLICATION AUTOMATISÉE — PROTOCOLE DU PROJET (recommandé)'
+ },
+ en:{
+  'nav.machines':'Client machines by department','nav.gpos':'GPOs to apply','nav.params':'GPO settings',
+  'nav.deploy':'Apply to machines','nav.clients':'Machine console & live test','nav.audit':'Audit journal','nav.settings':'Settings',
+  'badge.test':'TEST MODE — NO REAL MACHINE IS EVER CONTACTED','btn.resync':'↻ Resynchronize','btn.reset':'Reset',
+  'set.title':'Settings','set.sub':'Test mode, appearance & languages, Active Directory connection, GPO engine, logs and credits — all configured here, then “Save changes”.',
+  'set.t1':'Test mode & maintenance','set.t2':'Appearance & languages','set.t3':'Connection & AD DS','set.t4':'GPO engine & backend','set.t5':'Logs & audit','set.t6':'About & credits',
+  'set.testmode.hint':'Sandbox (mocking): no real PowerShell command or Active Directory query is sent. Disabling it requires a working AD connection.',
+  'set.resync.hint':'re-runs synchronization of virtual OUs, machines and GPOs',
+  'set.reset.hint':'restores the application to its original state (cache, simulation, configuration)',
+  'set.lang.label':'INTERFACE LANGUAGE','set.lang.hint':'interface texts update immediately',
+  'set.theme.label':'VISUAL THEME','set.theme.light':'Light mode (default)','set.theme.dark':'Dark mode','set.theme.system':'System mode (follow Windows)',
+  'set.accent.label':'ACCENT COLOR (buttons, links, badges)',
+  'set.dc':'SERVER / DOMAIN CONTROLLER (FQDN or IP)','set.dns':'DNS DOMAIN','set.netbios':'NETBIOS NAME',
+  'set.curuser':'Use the current Windows account','set.user':'USERNAME','set.pass':'PASSWORD (SecureString, in memory)',
+  'btn.testconn':'Test connection',
+  'set.catalog':'GPO BACKEND CATALOG (folder or JSON file)','set.catalog.hint':'the 16 project templates are embedded in this mockup; the real app reads this file',
+  'set.applymode':'APPLY MODE','set.apply.click':'Direct apply on click (assisted)','set.apply.confirm':'Explicit confirmation required (real default)',
+  'set.loglevel':'LOGGING LEVEL','set.log.e':'Error','set.log.w':'Warning','set.log.i':'Info / Debug',
+  'audit.action':'Action','audit.targets':'Targets','audit.result':'Result',
+  'set.about':'About & credits','set.author.role':'Designed and developed by','set.about.note':'Centralized administration console for GPOs and the Active Directory directory — WPF (.NET 10) for the real app, interactive HTML5 mockup for the design.',
+  'set.save.hint':'Saves are written to config.json in the real application (here: browser local storage).','btn.save':'Save changes',
+  'page.m1':'Client machines by department','page.m2':'GPOs to apply','page.m3':'GPO settings','page.m4':'Apply the GPOs to machines',
+  'set.auto.hint':'AUTOMATED APPLICATION — PROJECT PROTOCOL (recommended)'
+ }
+};
+function applyLang(l){
+  state.lang=I18N[l]?l:'fr';
+  document.documentElement.lang=state.lang==='en'?'en':'fr';
+  document.querySelectorAll('[data-i18n]').forEach(el=>{
+    const k=el.dataset.i18n,v=I18N[state.lang][k];
+    if(v!=null)el.innerHTML=v;
+  });
+  const sel=$('cfg-lang');if(sel)sel.value=state.lang;
+  if($('badge-lang-note')){}
+}
+$('cfg-lang').addEventListener('change',()=>applyLang($('cfg-lang').value));
+
+/* Écriture des valeurs de registre d’UNE GPO sur UN poste — partagée par le mode
+   pas-à-pas ET le protocole automatisé du projet. */
+function writeGpoEntries(m,gid){
+  const t=TBY[gid],p=state.params[gid],entries=t.reg(p);
+  if(!entries.length){dlog('['+m.name+'] '+t.name+' : aucun paramètre actif — rien à écrire.','warn');return'none';}
+  if(t.scope==='Computer'){
+    entries.forEach(e=>dlog('['+m.name+'] New-ItemProperty -Path \''+psPath(e.key)+'\' -Name \''+e.name+'\' -Value '+fmtVal(e)+' -Force'));
+    m.run.computer[gid]={params:{...p},values:entries.map(e=>({...e})),ts:now()};
+    return'written';
+  }
+  if(isAdminSession(m)){
+    /* Filtrage de sécurité (comme au réel) : les comptes administrateurs ne sont pas
+       dans le groupe « Utilisateurs standards » → la GPO utilisateur ne s’applique PAS. */
+    m.run.userRej[gid]={reason:'Compte '+ADMIN_ACCOUNT+' exclu du filtrage de sécurité',ts:now()};
+    dlog('['+m.name+'] Sécurité : filtre « Utilisateurs standards » — '+t.name+' ne s’applique PAS à la session '+ADMIN_ACCOUNT+' (admin).','warn');
+    return'rejected';
+  }
+  if(m.session==='std'){
+    entries.forEach(e=>dlog('['+m.name+'] [session '+sessionName(m)+'] New-ItemProperty -Path \''+psPath(e.key)+'\' -Name \''+e.name+'\' -Value '+fmtVal(e)+' -Force'));
+    m.run.user[gid]={params:{...p},values:entries.map(e=>({...e})),ts:now()};
+    return'written';
+  }
+  m.run.userPending[gid]={params:{...p},values:entries.map(e=>({...e})),ts:now()};
+  dlog('['+m.name+'] Portée Utilisateur : aucune session interactive — mise en file, appliquée à la prochaine ouverture de session.','warn');
+  return'pending';
+}
+
+/* =====================================================================
+   PAGE 4 — EXÉCUTION AUTOMATISÉE : PROTOCOLE DU PROJET (mode par défaut)
+   ===================================================================== */
+async function runProtocol(){
+  const{machines,gpos}=planData();
+  if(!machines.length||!gpos.length){toast('Plan incomplet : sélectionnez au moins un poste et une GPO (étapes 1-2).',true);return;}
+  state.deploying=true;$('btn-protocol').disabled=true;$('btn-confirm-deploy').disabled=true;
+  $('deploy-card').classList.remove('hidden');$('deploy-result').classList.add('hidden');
+  const log=$('deploy-log');log.innerHTML='';
+  const prog=$('deploy-prog');prog.style.width='0%';
+  let done=0;
+  dlog('PS C:\\> Invoke-AdopsProtocol -Mode Automated -Targets '+(machines.map(m=>m.name).join(','))+' -GpoIds '+(gpos.join(',')),'info');
+  dlog('[protocole] Directive d’application automatisée : ciblage AD → liaison transparente → paramètres du projet → validation automatique.','info');
+  const res={};
+  for(const m of machines){
+    const row={name:m.name,status:'…',detail:''};res[m.name]=row;
+    dlog('──────────────────────────────');
+    if(!m.online){
+      dlog('['+m.name+'] ✗ Échec — hôte injoignable (0x800706BA). Le protocole consigne l’échec et passe au suivant.','err');
+      row.status='fail';row.detail='Machine injoignable (éteinte ?)';
+      done++;prog.style.width=Math.round(done/machines.length*100)+'%';continue;
+    }
+    dlog('['+m.name+'] [1/4] OU du poste consultée dans AD DS : '+deptDn(m.ou),'info');
+    await sleep(380);
+    gpos.forEach(g=>dlog('['+m.name+'] [2/4] New-GPLink -Gpo « '+TBY[g].name+' » -Target '+deptDn(m.ou)+' -LinkEnabled Yes — association transparente ✓','ok'));
+    await sleep(320);
+    for(const gid of gpos){await sleep(200);writeGpoEntries(m,gid);}
+    m.run.plan=[...new Set([...m.run.plan,...gpos])];
+    dlog('['+m.name+'] [3/4] gpupdate /force déclenché automatiquement par le protocole…','info');
+    await sleep(520);
+    dlog('['+m.name+'] [4/4] « La mise à jour de la stratégie de groupe a réussi. » ✓ — validation automatique, sans intervention manuelle.','ok');
+    m.run.events.push({ts:now(),src:'ADOps — protocole projet',id:'1502',msg:'Application automatisée : '+(gpos.length)+' GPO liée(s) et valide(s) sur '+m.name+'.'});
+    row.status='ok';
+    row.detail=Object.keys(m.run.computer).length+' GPO ordinateur, '+Object.keys(m.run.user).length+' utilisateur'+(Object.keys(m.run.userRej).length?', '+Object.keys(m.run.userRej).length+' exclue(s) (admin)':'')+(Object.keys(m.run.userPending).length?', '+Object.keys(m.run.userPending).length+' en attente':'');
+    done++;prog.style.width=Math.round(done/machines.length*100)+'%';
+  }
+  dlog('──────────────────────────────');
+  dlog('Protocole terminé : '+machines.filter(m=>res[m.name].status==='ok').length+' succès, '+machines.filter(m=>res[m.name].status==='fail').length+' échec(s).','info');
+  $('tbody-deployres').innerHTML=machines.map(m=>{const r=res[m.name];
+    return'<tr><td><strong>'+esc(m.name)+'</strong></td><td>'+(r.status==='ok'?'<span class="pill">Appliqué (automatique)</span>':'<span class="pill red">Échec</span>')+'</td><td class="caption">'+esc(r.detail||'—')+'</td></tr>';}).join('');
+  $('deploy-result').classList.remove('hidden');
+  const okN=machines.filter(m=>res[m.name].status==='ok').length,failN=machines.length-okN;
+  audit('Application automatisée (protocole du projet)',machines.map(m=>m.name).join(', ')+' ← '+gpos.map(g=>TBY[g].name).join(', '),failN?(failN+' échec(s)'):'Réussi');
+  renderAudit();
+  state.deploying=false;$('btn-protocol').disabled=false;$('btn-confirm-deploy').disabled=false;
+  renderMachines();renderClients();renderDeploy();
+  toast('Protocole du projet exécuté : '+okN+' succès,'+(failN?failN+' échec(s).':'validation automatique OK.'));
+}
+
+/* =====================================================================
+   MA PROPRE GPO — création d’une stratégie personnalisée du projet
+   (au-delà des 16 modèles embarqués)
+   ===================================================================== */
+const REG_EXAMPLE='HKLM\\SOFTWARE\\Policies\\MaSociete\\MaRegle | ActiverRegle | REG_DWORD | 1';
+function ownGpoForm(){
+  return'<div class="grid g2">'+
+    '<div class="field"><label>NOM DE LA GPO (votre stratégie)</label><input class="input" id="f-gname" placeholder="ex. Blocage applications sociales"></div>'+
+    '<div class="field"><label>PORTÉE</label><select class="input" id="f-gscope"><option value="Computer">Ordinateur (HKLM)</option><option value="User">Utilisateur (HKCU)</option></select></div></div>'+
+    '<div class="field"><label>CATÉGORIE</label><select class="input" id="f-gcat">'+[...new Set(TEMPLATES.map(t=>t.cat)),'Projet (personnalisé)'].map(c=>'<option>'+esc(c)+'</option>').join('')+'</select></div>'+
+    '<div class="field"><label>EFFET ATTENDU (affiché dans la console du poste)</label><textarea id="f-geffect" placeholder="ex. Applications interdites bloquées par SRP/AppLocker"></textarea></div>'+
+    '<div class="field"><label>VALEURS DE REGISTRE — UNE PAR LIGNE : chemin | nom | type | valeur</label>'+
+    '<textarea id="f-greg" data-autoescape>'+esc(REG_EXAMPLE)+'</textarea>'+
+    '<div class="hint">Le protocole du projet applique ces valeurs telles quelles, puis lance gpupdate /force automatiquement. Type : REG_SZ, REG_DWORD…</div></div>';
+}
+function addOwnGpoModal(){
+  openModal('Créer ma propre GPO (protocole du projet)',ownGpoForm(),'Créer et sélectionner',()=>{
+    state.customSeq=(state.customSeq||0)+1;
+    const name=($('f-gname').value||'').trim()||('GPO personnalisée '+state.customSeq);
+    if(TEMPLATES.some(t=>t.custom&&t.name.toLowerCase()===name.toLowerCase())){toast('Une GPO personnalisée porte déjà ce nom.',true);return;}
+    const id='custom-'+state.customSeq;
+    const scope=$('f-gscope').value;
+    const cat=($('f-gcat').value||'Projet (personnalisé)').trim();
+    const eff=($('f-geffect').value||'').trim();
+    const def=($('f-greg').value||REG_EXAMPLE).trim();
+    const tpl={id:id,custom:true,name:name,cat:cat,scope:scope,risk:'Low',
+      desc:'GPO définie par le projet — appliquée via le protocole automatisé (liaison transparente + gpupdate /force).',
+      params:[{name:'regText',label:'Valeurs de registre (protocole du projet)',type:'MultilineText',def:def}],
+      reg:p=>String(p.regText||'').split(/\n+/).map(l=>l.trim()).filter(Boolean)
+             .filter(l=>/^(HKLM|HKCU|HKU|HKCR)/i.test(l)&&l.includes('|')&&l.split('|').length>=4)
+             .map(l=>{const a=l.split('|').map(x=>x.trim());
+               return{key:a[0],name:a[1],type:a[2]||'REG_SZ',data:a[3]!==undefined?a[3]:''};}),
+      effects:()=>[eff?{s:'block',t:eff}:{s:'info',t:'GPO personnalisée appliquée — effet défini par le projet'}]};
+    TEMPLATES.push(tpl);TBY[id]=tpl;
+    state.params[id]=Object.fromEntries(tpl.params.map(p=>[p.name,p.def]));   // init des params de la GPO personnalisée
+    state.selG.add(id);
+    audit('Création de GPO personnalisée',name+' ('+(scope==='User'?'Utilisateur':'Ordinateur')+')');
+    renderGpoFilters();renderGpos();renderParams();renderDeploy();refreshCounts();
+    toast('GPO « '+name+' » créée et sélectionnée. Exécutez ensuite le protocole automatisé (étape 4).');
+  });
+}
+$('btn-owngpo').addEventListener('click',addOwnGpoModal);
+/* Bascule de mode + lancement du protocole */
+$('auto-mode').addEventListener('change',e=>{
+  const auto=e.target.checked;
+  $('auto-zone').classList.toggle('hidden',!auto);
+  $('manual-zone').classList.toggle('hidden',auto);
+  renderDeploy();
+  if(auto)toast('Mode automatisé : un seul clic applique, lie et valide. Les réglages pas-à-pas restent disponibles en les désactivant.');
+});
+$('btn-protocol').addEventListener('click',runProtocol);
+
+/* =====================================================================
+   RESET + INIT
+   ===================================================================== */
+$('btn-reset').addEventListener('click',()=>{
+  MACHINES.length=0;state.synced=false;state.ous=[];
+  state.selM.clear();state.selG.clear();
+  TEMPLATES.forEach(t=>{state.params[t.id]=Object.fromEntries(t.params.map(p=>[p.name,p.def]));});
+  /* retrait des GPO personnalisées du projet créées pendant la session */
+  for(let i=TEMPLATES.length-1;i>=0;i--){if(TEMPLATES[i].custom){delete TBY[TEMPLATES[i].id];TEMPLATES.splice(i,1);}}
+  state.customSeq=0;
+  state.currentClient=null;state.audit=[];state.deploying=false;
+  state.lang='fr';state.theme='light';state.accent='#0ea56e';
+  try{localStorage.removeItem('adops.cfg');}catch(e){}
+  $('deploy-card').classList.add('hidden');$('deploy-result').classList.add('hidden');
+  renderAll();
+  toast('Mode test réinitialisé : de retour à l’écran de synchronisation (configuration par défaut restaurée).');
+  showSyncScreen();go('machines');applyLang('fr');applyTheme('light');applyAccent('#0ea56e');
+});
+function renderAll(){renderMachines();renderGpoFilters();renderGpos();renderParams();renderDeploy();renderClients();renderAudit();refreshCounts();applyTheme(state.theme);applyAccent(state.accent);applyLang(state.lang);}
+/* INIT : restaure la configuration enregistrée (config.json simulé) puis affine le thème */
+loadCfg();
+applyTheme(state.theme);applyAccent(state.accent);applyLang(state.lang);
+</script>
+</body>
+</html>

@@ -1,0 +1,29 @@
+name: Build and Test
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-and-test:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 10 SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Restore packages
+        run: dotnet restore ADOps.GpoManager.sln
+
+      - name: Build (Release)
+        run: dotnet build ADOps.GpoManager.sln -c Release --no-restore
+
+      - name: Run tests
+        run: dotnet test ADOps.GpoManager.sln -c Release --no-build --verbosity normal

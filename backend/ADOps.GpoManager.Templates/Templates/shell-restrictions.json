@@ -1,0 +1,51 @@
+{
+  "schemaVersion": 1,
+  "templateId": "shell-restrictions",
+  "displayName": "Restrictions de l'interface Windows (shell)",
+  "category": "Restrictions",
+  "description": "Restreint les vecteurs d'exécution classiques de l'interface Windows pour les utilisateurs standards : boîte Exécuter, raccourcis clavier Win+, options d'alimentation et verrouillage de poste.",
+  "expectedEffect": "Les utilisateurs ciblés ne peuvent plus lancer de programmes via la boîte Exécuter (Win+R), utiliser les raccourcis Win+X du clavier, ni arrêter/redémarrer la session depuis le menu Démarrer ; le verrouillage de poste peut également être retiré.",
+  "scope": "User",
+  "riskLevel": "Medium",
+  "supportedClients": ["Windows 10", "Windows 11"],
+  "requirements": [
+    "Aucun prérequis ADMX (stratégies natives Explorer et System)"
+  ],
+  "parameters": [
+    {
+      "name": "disableRunDialog",
+      "displayName": "Retirer la boîte Exécuter (Win+R)",
+      "type": "Boolean",
+      "description": "Vrai pour masquer la commande Exécuter du menu Démarrer et refuser Win+R (stratégie NoRun).",
+      "isRequired": true
+    },
+    {
+      "name": "disableWinKeys",
+      "displayName": "Désactiver les raccourcis clavier Win+",
+      "type": "Boolean",
+      "description": "Vrai pour désactiver les combinaisons Windows+X (stratégie NoWinKeys) — Win+L reste actif.",
+      "isRequired": true
+    },
+    {
+      "name": "hidePowerCommands",
+      "displayName": "Retirer Arrêter / Redémarrer / Mettre en veille",
+      "type": "Boolean",
+      "description": "Vrai pour retirer les options d'alimentation du menu Démarrer et de l'écran de connexion (stratégie NoClose).",
+      "isRequired": true
+    },
+    {
+      "name": "disableLockWorkstation",
+      "displayName": "Retirer l'option Verrouiller",
+      "type": "Boolean",
+      "description": "Vrai pour retirer l'option de verrouillage du poste (stratégie DisableLockWorkstation) — usage atypique, réservé aux postes en libre-service où la session est déjà fermée automatiquement.",
+      "isRequired": true
+    }
+  ],
+  "warnings": [
+    "Sans boîte Exécuter ni menu d'alimentation, les utilisateurs doivent passer par des raccourcis publiés et les postes doivent être redémarrés par une autre voie ( Wake-on-LAN, agent, assistance).",
+    "Ces restrictions gênent le dépannage de premier niveau : prévoyez une GPO distincte pour les postes de support ou un filtrage de sécurité par groupe.",
+    "Les restrictions s'appliquent à l'explorateur et aux points d'entrée standards ; elles ne constituent pas une frontière de sécurité contre un utilisateur déterminé."
+  ],
+  "supportStatus": "Available",
+  "supportNote": "Chemins vérifiés : HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Policies\\Explorer!NoRun, !NoWinKeys, !NoClose (valeur 1) ; HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Policies\\System!DisableLockWorkstation (valeur 1)."
+}

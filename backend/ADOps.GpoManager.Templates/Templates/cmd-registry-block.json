@@ -1,0 +1,38 @@
+{
+  "schemaVersion": 1,
+  "templateId": "cmd-registry-block",
+  "displayName": "Blocage de l'invite de commandes et de l'Éditeur du Registre",
+  "category": "Restrictions",
+  "description": "Interdit l'accès à cmd.exe (et à l'exécution de scripts .bat/.cmd selon le mode) ainsi qu'aux outils d'édition du Registre (regedit) pour les utilisateurs ciblés.",
+  "expectedEffect": "cmd.exe refuse de démarrer avec un message administratif ; regedit et regedt32 refusent de s'ouvrir. Selon le mode choisi, les fichiers de commandes (.bat, .cmd) continuent ou non de s'exécuter.",
+  "scope": "User",
+  "riskLevel": "Medium",
+  "supportedClients": ["Windows 10", "Windows 11"],
+  "requirements": [
+    "Aucun prérequis ADMX (stratégies natives System)"
+  ],
+  "parameters": [
+    {
+      "name": "cmdMode",
+      "displayName": "Accès à l'invite de commandes",
+      "type": "Enum",
+      "description": "Interdit (scripts inclus) : cmd.exe et .bat/.cmd refusés (valeur 2, recommandé). Interdit (cmd seule) : cmd.exe refusé mais les fichiers de commandes d'applications s'exécutent (valeur 1).",
+      "isRequired": true,
+      "enumValues": ["Interdit (scripts inclus)", "Interdit (cmd seule)"]
+    },
+    {
+      "name": "disableRegistryTools",
+      "displayName": "Interdire l'Éditeur du Registre",
+      "type": "Boolean",
+      "description": "Vrai pour bloquer regedit et regedt32 (stratégie DisableRegistryTools).",
+      "isRequired": true
+    }
+  ],
+  "warnings": [
+    "Le blocage « scripts inclus » (valeur 2) empêche l'exécution de tous les .bat/.cmd lancés par l'utilisateur : vérifiez qu'aucun logiciel métier n'en dépend.",
+    "Ces restrictions ne bloquent pas reg.exe en ligne de commande ni les outils PowerShell : combiner avec la politique d'exécution PowerShell pour une couverture complète.",
+    "Restriction de confort (shell) et non frontière de sécurité : un utilisateur local déterminé contourne les clés HKCU."
+  ],
+  "supportStatus": "Available",
+  "supportNote": "Chemins vérifiés : HKCU\\Software\\Policies\\Microsoft\\Windows\\System!DisableCMD (DWORD 1 ou 2) ; HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Policies\\System!DisableRegistryTools (DWORD 1)."
+}

@@ -1,0 +1,32 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <IsPackable>false</IsPackable>
+    <RootNamespace>ADOps.GpoManager.Tests</RootNamespace>
+    <Description>Tests unitaires du prototype ADOps GPO Manager.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- UseWPF retire l'using implicite System.IO (conflit avec System.Windows.Shapes.Path) :
+         les tests qui manipulent des fichiers en ont donc besoin explicitement. -->
+    <Using Include="System.IO" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\frontend\ADOps.GpoManager.App\ADOps.GpoManager.App.csproj" />
+    <ProjectReference Include="..\..\backend\ADOps.GpoManager.Core\ADOps.GpoManager.Core.csproj" />
+    <ProjectReference Include="..\..\backend\ADOps.GpoManager.PowerShell\ADOps.GpoManager.PowerShell.csproj" />
+    <ProjectReference Include="..\..\backend\ADOps.GpoManager.Infrastructure\ADOps.GpoManager.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\backend\ADOps.GpoManager.ActiveDirectory\ADOps.GpoManager.ActiveDirectory.csproj" />
+    <ProjectReference Include="..\..\backend\ADOps.GpoManager.Templates\ADOps.GpoManager.Templates.csproj" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="xunit" />
+    <PackageReference Include="xunit.runner.visualstudio">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,30 @@
+{
+  "schemaVersion": 1,
+  "templateId": "removable-storage-restrictions",
+  "displayName": "Restrictions de stockage amovible (USB)",
+  "category": "Périphériques",
+  "description": "Restreint l'accès aux supports de stockage amovibles (clés USB, cartes SD, disques externes) via les stratégies RemovableStorageDevices.",
+  "expectedEffect": "Accès complet, lecture seule ou blocage total des supports de stockage amovibles de la classe « disques » sur les postes ciblés.",
+  "scope": "Computer",
+  "riskLevel": "Medium",
+  "supportedClients": ["Windows 10", "Windows 11"],
+  "requirements": [
+    "Aucun prérequis ADMX (stratégies natives RemovableStorageDevices)"
+  ],
+  "parameters": [
+    {
+      "name": "access",
+      "displayName": "Accès aux supports amovibles",
+      "type": "Enum",
+      "description": "Accès complet (aucune restriction), Lecture seule (écriture refusée) ou Bloqué (lecture et écriture refusées).",
+      "isRequired": true,
+      "enumValues": ["Accès complet", "Lecture seule", "Bloqué"]
+    }
+  ],
+  "warnings": [
+    "La restriction s'applique à la classe de périphériques « disques » : clés USB, cartes SD et disques externes sont concernés.",
+    "Un blocage total empêche aussi l'utilisation légitime de supports amovibles (sauvegarde, installation) sur les postes ciblés."
+  ],
+  "supportStatus": "Available",
+  "supportNote": "Chemin vérifié : HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\RemovableStorageDevices\\{53f56307-b6bf-11d0-94f2-00a0c91efb8b} (Deny_All / Deny_Read / Deny_Write)."
+}

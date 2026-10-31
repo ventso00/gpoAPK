@@ -1,0 +1,31 @@
+{
+  "schemaVersion": 1,
+  "templateId": "smartscreen-enforcement",
+  "displayName": "Filtrage SmartScreen de Windows",
+  "category": "Sécurité",
+  "description": "Active le filtre SmartScreen de Windows (vérification de réputation des fichiers téléchargés et des applications exécutées) et impose le blocage plutôt que le simple avertissement.",
+  "expectedEffect": "Les exécutables de réputation inconnue ou signalés sont bloqués à l'exécution pour tous les utilisateurs du poste ; l'utilisateur ne peut pas passer outre l'avertissement.",
+  "scope": "Computer",
+  "riskLevel": "Low",
+  "supportedClients": ["Windows 10", "Windows 11"],
+  "requirements": [
+    "Windows 10 1709 ou supérieur pour le niveau « Bloquer »",
+    "Accès Internet sortant des postes vers le service de réputation Microsoft (sinon le filtrage reste inactif sans signal d'erreur)"
+  ],
+  "parameters": [
+    {
+      "name": "level",
+      "displayName": "Niveau de filtrage",
+      "type": "Enum",
+      "description": "Bloquer : refuse l'exécution (recommandé). Avertir : affiche un avertissement que l'utilisateur peut contourner.",
+      "isRequired": true,
+      "enumValues": ["Block", "Warn"]
+    }
+  ],
+  "warnings": [
+    "Des logiciels internes non signés et sans réputation peuvent être bloqués : les paqueter via une signature de code ou prévoir une procédure d'exception.",
+    "Le mode Avertir laisse l'utilisateur exécuter un fichier signalé — déconseillé pour un parc standard."
+  ],
+  "supportStatus": "Available",
+  "supportNote": "Chemins vérifiés : HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\System!EnableSmartScreen=1 (DWORD) et !ShellSmartScreenLevel (SZ « Block » ou « Warn ») — stratégie « Configurer Windows Defender SmartScreen » (WindowsExplorer.admx)."
+}

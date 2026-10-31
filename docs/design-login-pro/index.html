@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>VP — Connexion · GPO Manager</title>
+  <meta name="description" content="Portail d'administration centralisée des GPO et de l'Active Directory." />
+  <link rel="icon" type="image/jpeg" href="assets/logo.jpg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="ambient" aria-hidden="true">
+    <div class="ambient__glow ambient__glow--a"></div>
+    <div class="ambient__glow ambient__glow--b"></div>
+    <div class="ambient__grid"></div>
+  </div>
+
+  <main class="stage">
+    <div class="tilt" id="tilt">
+      <section class="card" aria-labelledby="login-title">
+        <header class="card__header">
+          <img class="card__logo" src="assets/logo.jpg" alt="Logo VP" width="44" height="44" />
+          <div class="card__brand">
+            <span class="card__brand-name">VP&nbsp;GPO&nbsp;Manager</span>
+            <span class="card__brand-tag">Console d'administration AD</span>
+          </div>
+        </header>
+
+        <!-- ═══════════ ÉTAPE 1 · CONNEXION ═══════════ -->
+        <div class="card__body" id="pane-login">
+          <h1 id="login-title" class="headline">Connexion au<br />contrôleur de domaine</h1>
+          <p class="subline">
+            Authentification administrateur sur Active Directory.
+            Les credentials restent en mémoire, jamais sur disque.
+          </p>
+
+          <div class="sso">
+            <button type="button" class="btn btn--sso" data-provider="entra">
+              <svg class="ico" viewBox="0 0 23 23" width="18" height="18" aria-hidden="true">
+                <path fill="#f25022" d="M1 1h10v10H1z"/>
+                <path fill="#7fba00" d="M12 1h10v10H12z"/>
+                <path fill="#00a4ef" d="M1 12h10v10H1z"/>
+                <path fill="#ffb900" d="M12 12h10v10H12z"/>
+              </svg>
+              <span>Se connecter avec Microsoft&nbsp;Entra&nbsp;ID</span>
+            </button>
+            <button type="button" class="btn btn--ghost" data-provider="windows">
+              <svg class="ico" viewBox="0 0 24 24" width="17" height="17" aria-hidden="true">
+                <path fill="#4CC2FF" d="M3 5.6 10.4 4.5v7.1H3zM10.4 12.4v7.1L3 18.4v-6zM11.6 4.3 21 3v8.6h-9.4zM21 12.4V21l-9.4-1.3v-7.3z"/>
+              </svg>
+              <span>Compte Windows actuel</span>
+            </button>
+          </div>
+
+          <div class="divider" role="separator">
+            <span>ou compte administrateur AD</span>
+          </div>
+
+          <form id="login-form" class="form" novalidate>
+            <div class="field-grid">
+              <div class="field">
+                <label for="dc">Contrôleur de domaine ou IP</label>
+                <div class="control">
+                  <input id="dc" name="dc" type="text" value="dc1.demo.local"
+                         placeholder="dc1.demo.local ou 192.168.1.10" spellcheck="false" autocomplete="off" required />
+                </div>
+                <p class="error" id="dc-error" hidden></p>
+              </div>
+              <div class="field">
+                <label for="domain">Domaine</label>
+                <div class="control">
+                  <input id="domain" name="domain" type="text" value="demo.local"
+                         placeholder="demo.local" spellcheck="false" autocomplete="off" required />
+                </div>
+                <p class="error" id="domain-error" hidden></p>
+              </div>
+            </div>
+
+            <div class="field">
+              <label for="user">Utilisateur administrateur</label>
+              <div class="control control--prefixed">
+                <span class="prefix" id="user-prefix" aria-hidden="true">DEMO\</span>
+                <input id="user" name="user" type="text" value="demo"
+                       placeholder="demo" spellcheck="false" autocomplete="username" required
+                       style="--prefix-w: 62px" />
+              </div>
+              <p class="error" id="user-error" hidden></p>
+            </div>
+
+            <div class="field">
+              <label for="password">Mot de passe</label>
+              <div class="control">
+                <input id="password" name="password" type="password" placeholder="•••••••••••••"
+                       autocomplete="current-password" required minlength="4" />
+                <button type="button" class="reveal" id="reveal" aria-label="Afficher le mot de passe" aria-pressed="false">
+                  <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                    <path d="M2 12s3.6-6.5 10-6.5S22 12 22 12s-3.6 6.5-10 6.5S2 12 2 12Z"/>
+                    <circle cx="12" cy="12" r="2.8"/>
+                    <path class="reveal__slash" d="M4 20 20 4" hidden/>
+                  </svg>
+                </button>
+              </div>
+              <p class="error" id="password-error" hidden></p>
+            </div>
+
+            <div class="form__options">
+              <label class="check">
+                <input type="checkbox" name="remember" id="remember" checked />
+                <span class="check__box" aria-hidden="true">
+                  <svg viewBox="0 0 12 12" width="10" height="10"><path d="M2 6.2 4.7 9 10 3.2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </span>
+                <span>Mémoriser le profil</span>
+              </label>
+              <span class="mode-chip" id="mode-chip" title="Voie d'exécution retenue après health check">WinRM distant</span>
+            </div>
+
+            <button type="submit" class="btn btn--primary" id="submit">
+              <span class="btn__label">Se connecter &amp; synchroniser</span>
+              <span class="btn__spinner" aria-hidden="true"></span>
+              <svg class="btn__arrow" viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M5 12h13M13 6l6 6-6 6"/>
+              </svg>
+            </button>
+          </form>
+        </div>
+
+        <!-- ═══════════ ÉTAPE 2 · HEALTH CHECK + SYNCHRONISATION ═══════════ -->
+        <div class="card__body" id="pane-sync" hidden>
+          <h2 class="headline headline--sm">Synchronisation<br />de l'environnement</h2>
+          <p class="subline">
+            <span id="sync-target">demo.local</span> · profil <strong id="sync-user">DEMO\d</strong>
+          </p>
+
+          <ol class="steps" id="steps" aria-live="polite">
+            <li class="step" data-step="dns">
+              <span class="step__icon" aria-hidden="true"></span>
+              <span class="step__label">Résolution DNS du contrôleur <code>dc1.demo.local</code></span>
+              <span class="step__meta"></span>
+            </li>
+            <li class="step" data-step="winrm">
+              <span class="step__icon" aria-hidden="true"></span>
+              <span class="step__label">Test WinRM (<code>Test-WSMan</code>)</span>
+              <span class="step__meta"></span>
+            </li>
+            <li class="step" data-step="auth">
+              <span class="step__icon" aria-hidden="true"></span>
+              <span class="step__label">Authentification de l'administrateur</span>
+              <span class="step__meta"></span>
+            </li>
+            <li class="step" data-step="ou">
+              <span class="step__icon" aria-hidden="true"></span>
+              <span class="step__label">Import de l'arborescence des OU</span>
+              <span class="step__meta"></span>
+            </li>
+            <li class="step" data-step="users">
+              <span class="step__icon" aria-hidden="true"></span>
+              <span class="step__label">Synchronisation des utilisateurs &amp; ordinateurs</span>
+              <span class="step__meta"></span>
+            </li>
+            <li class="step" data-step="gpo">
+              <span class="step__icon" aria-hidden="true"></span>
+              <span class="step__label">Inventaire des GPO liées (ordre &amp; activation)</span>
+              <span class="step__meta"></span>
+            </li>
+            <li class="step" data-step="cache">
+              <span class="step__icon" aria-hidden="true"></span>
+              <span class="step__label">Instantané local horodaté</span>
+              <span class="step__meta"></span>
+            </li>
+          </ol>
+
+          <div class="progress" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="progress">
+            <div class="progress__bar" id="progress-bar"></div>
+          </div>
+        </div>
+
+        <!-- ═══════════ ÉTAPE 3 · SUCCÈS ═══════════ -->
+        <div class="card__body" id="pane-done" hidden>
+          <div class="done">
+            <div class="done__badge" aria-hidden="true">
+              <svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M4.5 12.5 10 18 19.5 7"/>
+              </svg>
+            </div>
+            <h2 class="headline headline--sm">Connecté à <span class="mono">demo.local</span></h2>
+            <p class="subline subline--center">
+              Données synchronisées — AD DS reste la source de vérité.
+            </p>
+
+            <div class="stats" id="stats">
+              <div class="stat"><strong data-count="13">0</strong><span>Unités d'organisation</span></div>
+              <div class="stat"><strong data-count="248">0</strong><span>Utilisateurs</span></div>
+              <div class="stat"><strong data-count="312">0</strong><span>Ordinateurs</span></div>
+              <div class="stat"><strong data-count="37">0</strong><span>GPO liées</span></div>
+            </div>
+
+            <button type="button" class="btn btn--primary" id="goto-dash">
+              <span class="btn__label">Ouvrir le tableau de bord</span>
+              <svg class="btn__arrow" viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M5 12h13M13 6l6 6-6 6"/>
+              </svg>
+            </button>
+            <button type="button" class="btn btn--ghost" id="logout">Revenir au formulaire</button>
+          </div>
+        </div>
+
+        <footer class="card__footer">
+          <span class="pulse" aria-hidden="true"></span>
+          <span id="footer-status">Health check prêt — DNS · WinRM · AD DS</span>
+          <span class="sep">·</span>
+          <span>v1.0</span>
+        </footer>
+      </section>
+    </div>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>

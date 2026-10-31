@@ -1,0 +1,37 @@
+{
+  "schemaVersion": 1,
+  "templateId": "windows-defender-firewall",
+  "displayName": "Windows Defender et pare-feu Windows",
+  "category": "Sécurité",
+  "description": "Vérifie l'état du pare-feu Windows (profil Domaine) et de la protection en temps réel de Microsoft Defender, via des clés de stratégie documentées.",
+  "expectedEffect": "Le pare-feu du profil Domaine reste activé (ou désactivé explicitement, après confirmation de risque). La protection en temps réel de Defender reste activée (ou est désactivée explicitement, après confirmation de risque).",
+  "scope": "Computer",
+  "riskLevel": "High",
+  "supportedClients": ["Windows 10", "Windows 11"],
+  "requirements": [
+    "Aucun prérequis ADMX pour ces deux clés (stratégies natives)",
+    "La protection contre la modification (Tamper Protection) peut limiter l'effet de certains réglages Defender"
+  ],
+  "parameters": [
+    {
+      "name": "firewallEnabled",
+      "displayName": "Pare-feu activé (profil Domaine)",
+      "type": "Boolean",
+      "description": "Vrai pour activer, faux pour désactiver le pare-feu du profil Domaine. Désactiver le pare-feu réduit la protection du poste.",
+      "isRequired": true
+    },
+    {
+      "name": "realTimeProtectionEnabled",
+      "displayName": "Protection en temps réel Defender",
+      "type": "Boolean",
+      "description": "Vrai pour activer, faux pour désactiver la protection en temps réel. Désactiver Defender réduit fortement la protection du poste.",
+      "isRequired": true
+    }
+  ],
+  "warnings": [
+    "Désactiver le pare-feu ou la protection en temps réel réduit la sécurité du poste : une confirmation de risque spécifique est exigée avant application.",
+    "Ces réglages ne couvrent pas l'intégralité de Defender ni du pare-feu (autres profils, exclusions, règles sortantes) : ce sont des réglages ciblés, pas une configuration complète."
+  ],
+  "supportStatus": "Available",
+  "supportNote": "Chemins vérifiés : HKLM\\SOFTWARE\\Policies\\Microsoft\\WindowsFirewall\\DomainProfile\\EnableFirewall et HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows Defender\\Real-Time Protection\\DisableRealTimeMonitoring."
+}

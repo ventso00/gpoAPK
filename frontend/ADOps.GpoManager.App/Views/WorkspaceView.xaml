@@ -1,0 +1,1322 @@
+﻿<UserControl x:Class="ADOps.GpoManager.App.Views.WorkspaceView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:controls="clr-namespace:ADOps.GpoManager.App.Controls"
+             FontFamily="{StaticResource AppFontFamily}">
+
+    <UserControl.Resources>
+        <Style x:Key="MachineChipButtonStyle" TargetType="Button">
+            <Setter Property="Background" Value="{DynamicResource CardBackgroundBrush}" />
+            <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="Padding" Value="12,8" />
+            <Setter Property="Margin" Value="0,0,8,8" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="HorizontalContentAlignment" Value="Left" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Root"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="10"
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Left" VerticalAlignment="Center" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Root" Property="BorderBrush" Value="{DynamicResource AccentBrush}" />
+                            </Trigger>
+                            <DataTrigger Binding="{Binding IsCurrentClient}" Value="True">
+                                <Setter TargetName="Root" Property="BorderBrush" Value="{DynamicResource AccentBrush}" />
+                                <Setter TargetName="Root" Property="Background" Value="{DynamicResource AccentSoftBrush}" />
+                            </DataTrigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="PageTagStyle" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="{DynamicResource AccentBrush}" />
+            <Setter Property="FontSize" Value="10" />
+            <Setter Property="FontWeight" Value="Bold" />
+            <Setter Property="Margin" Value="0,0,0,6" />
+        </Style>
+
+        <Style x:Key="PageHeadingStyle" TargetType="TextBlock" BasedOn="{StaticResource PageTitleStyle}">
+            <Setter Property="FontSize" Value="24" />
+        </Style>
+
+        <Style x:Key="ColumnHeaderStyle" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="10" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+        </Style>
+    </UserControl.Resources>
+
+    <ScrollViewer x:Name="WorkspaceScroll" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+        <StackPanel MaxWidth="1460" Margin="26,20,28,60">
+
+            <!-- Toast de statut -->
+            <Border Margin="0,0,0,12" Padding="12,10" CornerRadius="10" BorderThickness="1"
+                    Visibility="{Binding ShowStatus, Converter={StaticResource BooleanToVisibilityConverter}}">
+                <Border.Style>
+                    <Style TargetType="Border">
+                        <Setter Property="Background" Value="{DynamicResource AccentSoftBrush}" />
+                        <Setter Property="BorderBrush" Value="{DynamicResource AccentBorderBrush}" />
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding IsStatusError}" Value="True">
+                                <Setter Property="Background" Value="{DynamicResource DangerSoftBrush}" />
+                                <Setter Property="BorderBrush" Value="{DynamicResource DangerBorderBrush}" />
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </Border.Style>
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <controls:LucideIcon Grid.Column="0" Width="15" Height="15" Margin="0,0,9,0"
+                                         VerticalAlignment="Center" Stroke="{DynamicResource AccentBrush}"
+                                         Icon="Info" />
+                    <TextBlock Grid.Column="1" Text="{Binding StatusMessage}" TextWrapping="Wrap"
+                               VerticalAlignment="Center" FontSize="12.5" />
+                    <Button Grid.Column="2" Command="{Binding DismissStatusCommand}"
+                            Style="{StaticResource GhostButtonStyle}" Margin="10,0,0,0"
+                            AutomationProperties.Name="Fermer le message">
+                        <controls:LucideIcon Icon="Close" Width="13" Height="13" />
+                    </Button>
+                </Grid>
+            </Border>
+
+            <!-- ================= ÉTAPE 1 : UTILISATEURS AD DS ================= -->
+            <StackPanel Visibility="{Binding IsMachinesPage, Converter={StaticResource BooleanToVisibilityConverter}}">
+                <TextBlock Text="ÉTAPE 1 · COMPTES UTILISATEURS PAR DÉPARTEMENT" Style="{StaticResource PageTagStyle}" />
+                <StackPanel Orientation="Horizontal">
+                    <controls:LucideIcon Icon="Users" Width="20" Height="20" Stroke="{DynamicResource TextPrimaryBrush}" />
+                    <TextBlock Text="Comptes utilisateurs par département" Style="{StaticResource PageHeadingStyle}"
+                               Margin="10,0,0,0" VerticalAlignment="Center" />
+                </StackPanel>
+                <TextBlock Style="{StaticResource PageSubtitleStyle}"
+                           Text="Les comptes sont regroupés d'après leur département dans AD DS. Chaque compte est lu depuis le cache AD DS synchronisé. Les comptes désactivés et les administrateurs sont exclus du ciblage GPO." />
+
+                <WrapPanel Margin="0,14,0,10">
+                    <Button Style="{StaticResource DemoSmallButtonStyle}" Margin="0,0,8,0"
+                            Command="{Binding SelectAllUsersCommand}" AutomationProperties.Name="Tout sélectionner">
+                        <StackPanel Orientation="Horizontal">
+                            <controls:LucideIcon Icon="Check" Width="13" Height="13" />
+                            <TextBlock Text="Tout sélectionner" Margin="6,0,0,0" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </Button>
+                    <Button Style="{StaticResource DemoSmallButtonStyle}" Margin="0,0,8,0"
+                            Command="{Binding SelectNoUsersCommand}" AutomationProperties.Name="Tout désélectionner">
+                        <StackPanel Orientation="Horizontal">
+                            <controls:LucideIcon Icon="Ban" Width="13" Height="13" />
+                            <TextBlock Text="Tout désélectionner" Margin="6,0,0,0" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </Button>
+                    <Button Style="{StaticResource DemoSmallButtonStyle}" Margin="0,0,8,0"
+                            Command="{Binding ReloadWorkspaceCommand}">
+                        <StackPanel Orientation="Horizontal">
+                            <controls:LucideIcon Icon="RotateCcw" Width="13" Height="13" />
+                            <TextBlock Text="Actualiser" Margin="6,0,0,0" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </Button>
+                    <Button Style="{StaticResource DemoSmallPrimaryButtonStyle}"
+                            Command="{Binding DataContext.SyncNowCommand, RelativeSource={RelativeSource AncestorType=Window}}">
+                        <StackPanel Orientation="Horizontal">
+                            <controls:LucideIcon Icon="RefreshCw" Width="13" Height="13" />
+                            <TextBlock Text="Synchroniser AD DS" Margin="6,0,0,0" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </Button>
+                </WrapPanel>
+
+                <Grid Margin="0,0,0,4">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <StackPanel Orientation="Horizontal">
+                        <Border Style="{StaticResource PillCyanStyle}">
+                            <TextBlock Text="{Binding SelectionPillText}" Style="{StaticResource PillTextStyle}"
+                                       Foreground="{DynamicResource AccentBrush}" />
+                        </Border>
+                        <TextBlock Text="{Binding UsersSummaryText}" Style="{StaticResource CaptionStyle}"
+                                   VerticalAlignment="Center" Margin="10,0,0,0" />
+                    </StackPanel>
+                    <TextBlock Grid.Column="1" Text="Étape suivante : choisir les GPO à appliquer."
+                               Style="{StaticResource CaptionStyle}" VerticalAlignment="Center" />
+                </Grid>
+
+                <ItemsControl ItemsSource="{Binding UserGroups}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Border Style="{StaticResource DemoCardStyle}" Margin="0,10,0,0"
+                                    Visibility="{Binding IsVisible, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                <StackPanel>
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+                                        <StackPanel Grid.Column="0">
+                                            <StackPanel Orientation="Horizontal">
+                                                <TextBlock Text="{Binding Name}" FontSize="15" FontWeight="SemiBold"
+                                                           Foreground="{DynamicResource TextPrimaryBrush}" />
+                                                <Border Style="{StaticResource PillGreyStyle}" Margin="8,0,0,0">
+                                                    <TextBlock Text="{Binding Users.Count}" Style="{StaticResource PillTextStyle}"
+                                                               Foreground="{DynamicResource TextSecondaryBrush}" />
+                                                </Border>
+                                            </StackPanel>
+                                            <TextBlock Text="{Binding Subtitle}" Style="{StaticResource CaptionStyle}" Margin="0,3,0,0" />
+                                        </StackPanel>
+                                        <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                                            <TextBlock Text="{Binding SelectionText}" Style="{StaticResource CaptionStyle}"
+                                                       VerticalAlignment="Center" Margin="0,0,10,0" />
+                                            <TextBlock Text="{Binding Meta}" Style="{StaticResource CaptionStyle}"
+                                                       VerticalAlignment="Center" Margin="0,0,10,0" />
+                                            <Button Content="Tout / rien" Style="{StaticResource DemoSmallButtonStyle}"
+                                                    Command="{Binding DataContext.ToggleUserDepartmentCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                    CommandParameter="{Binding}" />
+                                        </StackPanel>
+                                    </Grid>
+
+                                    <Border BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,1,0,0" Margin="0,10,0,0">
+                                        <StackPanel>
+                                            <Grid Margin="0,7,0,4">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="32" />
+                                                    <ColumnDefinition Width="1.5*" />
+                                                    <ColumnDefinition Width="1*" />
+                                                    <ColumnDefinition Width="125" />
+                                                    <ColumnDefinition Width="1.4*" />
+                                                    <ColumnDefinition Width="1*" />
+                                                    <ColumnDefinition Width="1.15*" />
+                                                    <ColumnDefinition Width="78" />
+                                                </Grid.ColumnDefinitions>
+                                                <TextBlock Grid.Column="1" Text="NOM" Margin="0,0,8,0" Style="{StaticResource ColumnHeaderStyle}" />
+                                                <TextBlock Grid.Column="2" Text="LOGIN" Margin="0,0,8,0" Style="{StaticResource ColumnHeaderStyle}" />
+                                                <TextBlock Grid.Column="3" Text="ÉTAT DU COMPTE" Margin="0,0,8,0" Style="{StaticResource ColumnHeaderStyle}" />
+                                                <TextBlock Grid.Column="4" Text="DÉPARTEMENT" Margin="0,0,8,0" Style="{StaticResource ColumnHeaderStyle}" />
+                                                <TextBlock Grid.Column="5" Text="OU (AD)" Margin="0,0,8,0" Style="{StaticResource ColumnHeaderStyle}" />
+                                                <TextBlock Grid.Column="6" Text="EMAIL" Margin="0,0,8,0" Style="{StaticResource ColumnHeaderStyle}" />
+                                                <TextBlock Grid.Column="7" Text="GPO ADOps" Style="{StaticResource ColumnHeaderStyle}" />
+                                            </Grid>
+
+                                            <ItemsControl ItemsSource="{Binding Users}">
+                                                <ItemsControl.ItemTemplate>
+                                                    <DataTemplate>
+                                                        <Border BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,0,0,1"
+                                                                Padding="0,6"
+                                                                Visibility="{Binding IsVisible, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                                            <Grid>
+                                                                <Grid.ColumnDefinitions>
+                                                                    <ColumnDefinition Width="32" />
+                                                                    <ColumnDefinition Width="1.5*" />
+                                                                    <ColumnDefinition Width="1*" />
+                                                                    <ColumnDefinition Width="125" />
+                                                                    <ColumnDefinition Width="1.4*" />
+                                                                    <ColumnDefinition Width="1*" />
+                                                                    <ColumnDefinition Width="1.15*" />
+                                                                    <ColumnDefinition Width="78" />
+                                                                </Grid.ColumnDefinitions>
+
+                                                                <CheckBox Grid.Column="0" Style="{StaticResource DemoCheckBoxStyle}"
+                                                                          IsChecked="{Binding IsSelected, Mode=TwoWay}"
+                                                                          VerticalAlignment="Center" />
+
+                                                                <StackPanel Grid.Column="1" Margin="2,0,8,0" VerticalAlignment="Center"
+                                                                            ToolTip="{Binding DistinguishedName}">
+                                                                    <TextBlock Text="{Binding Name}" FontSize="12.8" FontWeight="SemiBold"
+                                                                               Foreground="{DynamicResource TextPrimaryBrush}"
+                                                                               TextTrimming="CharacterEllipsis" />
+                                                                    <TextBlock Text="{Binding LastLogonText}" Style="{StaticResource CaptionStyle}"
+                                                                               FontSize="10.5" Margin="0,2,0,0" TextTrimming="CharacterEllipsis"
+                                                                               ToolTip="{Binding LastLogonText}" />
+                                                                </StackPanel>
+
+                                                                <TextBlock Grid.Column="2" Text="{Binding Login}" Style="{StaticResource CaptionStyle}"
+                                                                           FontSize="11.5" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"
+                                                                           Margin="0,0,8,0" ToolTip="SamAccountName (journal du compte)" />
+
+                                                                <StackPanel Grid.Column="3" Orientation="Horizontal" VerticalAlignment="Center">
+                                                                    <Border HorizontalAlignment="Left">
+                                                                        <Border.Style>
+                                                                            <Style TargetType="Border" BasedOn="{StaticResource PillGreyStyle}">
+                                                                                <Style.Triggers>
+                                                                                    <DataTrigger Binding="{Binding IsAccountEnabled}" Value="True">
+                                                                                        <Setter Property="Background" Value="{DynamicResource SuccessSoftBrush}" />
+                                                                                        <Setter Property="BorderBrush" Value="{DynamicResource SuccessBorderBrush}" />
+                                                                                    </DataTrigger>
+                                                                                    <DataTrigger Binding="{Binding IsAccountDisabled}" Value="True">
+                                                                                        <Setter Property="Background" Value="{DynamicResource DangerSoftBrush}" />
+                                                                                        <Setter Property="BorderBrush" Value="{DynamicResource DangerBorderBrush}" />
+                                                                                    </DataTrigger>
+                                                                                </Style.Triggers>
+                                                                            </Style>
+                                                                        </Border.Style>
+                                                                        <TextBlock Text="{Binding AccountStatePillText}">
+                                                                            <TextBlock.Style>
+                                                                                <Style TargetType="TextBlock" BasedOn="{StaticResource PillTextStyle}">
+                                                                                    <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}" />
+                                                                                    <Style.Triggers>
+                                                                                        <DataTrigger Binding="{Binding IsAccountEnabled}" Value="True">
+                                                                                            <Setter Property="Foreground" Value="{DynamicResource SuccessBrush}" />
+                                                                                        </DataTrigger>
+                                                                                        <DataTrigger Binding="{Binding IsAccountDisabled}" Value="True">
+                                                                                            <Setter Property="Foreground" Value="{DynamicResource DangerBrush}" />
+                                                                                        </DataTrigger>
+                                                                                    </Style.Triggers>
+                                                                                </Style>
+                                                                            </TextBlock.Style>
+                                                                        </TextBlock>
+                                                                    </Border>
+                                                                    <Border Style="{StaticResource PillAmberStyle}" Margin="5,0,0,0"
+                                                                            Visibility="{Binding IsAccountLocked, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                                                        <TextBlock Text="Verrouillé" Style="{StaticResource PillTextStyle}"
+                                                                                   Foreground="{DynamicResource WarningBrush}" />
+                                                                    </Border>
+                                                                </StackPanel>
+
+                                                                <TextBlock Grid.Column="4" Text="{Binding Department}" Style="{StaticResource CaptionStyle}"
+                                                                           FontSize="11.5" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"
+                                                                           Margin="0,0,8,0" ToolTip="{Binding Department}" />
+                                                                <TextBlock Grid.Column="5" Text="{Binding OuText}" Style="{StaticResource CaptionStyle}"
+                                                                           FontSize="11.5" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"
+                                                                           Margin="0,0,8,0" ToolTip="{Binding OuDistinguishedName}" />
+                                                                <TextBlock Grid.Column="6" Text="{Binding Email}" Style="{StaticResource CaptionStyle}"
+                                                                           FontSize="11.5" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"
+                                                                           Margin="0,0,8,0" ToolTip="{Binding Email}" />
+
+                                                                <Border Grid.Column="7" HorizontalAlignment="Left"
+                                                                        Visibility="{Binding HasRecords, Converter={StaticResource BooleanToVisibilityConverter}}"
+                                                                        Style="{StaticResource PillCyanStyle}">
+                                                                    <TextBlock Text="{Binding RecordCountText}" Style="{StaticResource PillTextStyle}"
+                                                                               Foreground="{DynamicResource AccentBrush}" />
+                                                                </Border>
+                                                            </Grid>
+                                                        </Border>
+                                                    </DataTemplate>
+                                                </ItemsControl.ItemTemplate>
+                                            </ItemsControl>
+                                        </StackPanel>
+                                    </Border>
+                                </StackPanel>
+                            </Border>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+
+                <TextBlock Text="Les comptes désactivés et les administrateurs sont exclus du ciblage GPO. La GPO est liée à l&#39;OU du compte et filtrée par groupe de sécurité AD DS."
+                           Style="{StaticResource HintStyle}" Margin="0,10,0,0" />
+
+                <Grid Margin="0,16,0,0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Text="{Binding PipelineSummary}" Style="{StaticResource CaptionStyle}" VerticalAlignment="Center" />
+                    <Button Grid.Column="1" Style="{StaticResource PrimaryButtonStyle}"
+                            IsEnabled="{Binding CanContinueToGpos}"
+                            Command="{Binding SetPageCommand}" CommandParameter="gpos">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="Continuer : GPO" VerticalAlignment="Center" />
+                            <controls:LucideIcon Icon="ArrowRight" Width="14" Height="14" Margin="7,0,0,0" />
+                        </StackPanel>
+                    </Button>
+                </Grid>
+            </StackPanel>
+
+            <!-- ================= ÉTAPE 2 : GPO ================= -->
+            <StackPanel Visibility="{Binding IsGposPage, Converter={StaticResource BooleanToVisibilityConverter}}">
+                <TextBlock Text="ÉTAPE 2 · GESTION DES GPO" Style="{StaticResource PageTagStyle}" />
+                <StackPanel Orientation="Horizontal">
+                    <controls:LucideIcon Icon="ListChecks" Width="20" Height="20" Stroke="{DynamicResource TextPrimaryBrush}" />
+                    <TextBlock Text="GPO à appliquer" Style="{StaticResource PageHeadingStyle}"
+                               Margin="10,0,0,0" VerticalAlignment="Center" />
+                </StackPanel>
+                <TextBlock Style="{StaticResource PageSubtitleStyle}"
+                           Text="Sélectionnez une ou plusieurs stratégies du catalogue (16 modèles réels du projet). Leurs paramètres seront configurés à l'étape suivante." />
+
+                <Border Style="{StaticResource CardStyle}" Padding="12,8" Margin="0,14,0,0" CornerRadius="22"
+                        HorizontalAlignment="Left" Width="430">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <controls:LucideIcon Grid.Column="0" Icon="Search" Width="14" Height="14"
+                                             Stroke="{DynamicResource TextSecondaryBrush}" VerticalAlignment="Center" />
+                        <Grid Grid.Column="1" Margin="8,0,0,0">
+                            <TextBox Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
+                                     BorderThickness="0" Background="Transparent" MinHeight="24" Padding="0"
+                                     FontFamily="{StaticResource AppFontFamily}"
+                                     VerticalContentAlignment="Center"
+                                     ToolTip="Rechercher une GPO — nom, catégorie, risque ou portée…" />
+                            <TextBlock Text="Rechercher une GPO…" Foreground="{DynamicResource TextSecondaryBrush}"
+                                       IsHitTestVisible="False" VerticalAlignment="Center" FontSize="12.5"
+                                       TextTrimming="CharacterEllipsis">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Visibility" Value="Collapsed" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding SearchText}" Value="">
+                                                <Setter Property="Visibility" Value="Visible" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
+                        </Grid>
+                    </Grid>
+                </Border>
+
+                <ItemsControl ItemsSource="{Binding CategoryFilters}" Margin="0,12,0,4">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <WrapPanel />
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Button Content="{Binding Label}" Style="{StaticResource DemoChipStyle}" Margin="0,0,7,7"
+                                    Command="{Binding DataContext.SetCategoryFilterCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                    CommandParameter="{Binding Category}" />
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+
+                <Grid Margin="0,4,0,10">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <Border Grid.Column="0" Style="{StaticResource PillCyanStyle}">
+                        <TextBlock Text="{Binding GpoSelectionPillText}" Style="{StaticResource PillTextStyle}"
+                                   Foreground="{DynamicResource AccentBrush}" />
+                    </Border>
+                    <TextBlock Grid.Column="1" Text="{Binding FilteredTemplateCountText}" Style="{StaticResource CaptionStyle}"
+                               VerticalAlignment="Center" Margin="10,0,0,0" />
+                    <Button Grid.Column="2" Content="Tout désélectionner" Style="{StaticResource DemoSmallButtonStyle}"
+                            Command="{Binding SelectNoTemplatesCommand}" />
+                </Grid>
+
+                <ItemsControl ItemsSource="{Binding Templates}">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <UniformGrid Columns="2" />
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Border Margin="0,0,10,10" Padding="14" CornerRadius="12" BorderThickness="1"
+                                    Visibility="{Binding IsVisible, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                <Border.Style>
+                                    <Style TargetType="Border">
+                                        <Setter Property="Background" Value="{DynamicResource CardBackgroundBrush}" />
+                                        <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsSelected}" Value="True">
+                                                <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}" />
+                                                <Setter Property="Background" Value="{DynamicResource AccentSoftBrush}" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Border.Style>
+                                <StackPanel>
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto" />
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+                                        <CheckBox Grid.Column="0" Style="{StaticResource DemoCheckBoxStyle}"
+                                                  IsChecked="{Binding IsSelected, Mode=TwoWay}" VerticalAlignment="Top"
+                                                  Margin="0,1,9,0" />
+                                        <TextBlock Grid.Column="1" Text="{Binding DisplayName}" FontSize="13.5" FontWeight="SemiBold"
+                                                   TextWrapping="Wrap" Foreground="{DynamicResource TextPrimaryBrush}" />
+                                        <Border Grid.Column="2" Style="{StaticResource PillCyanStyle}" Margin="8,0,0,0">
+                                            <TextBlock Text="{Binding ScopeText}" Style="{StaticResource PillTextStyle}"
+                                                       Foreground="{DynamicResource AccentBrush}" />
+                                        </Border>
+                                    </Grid>
+
+                                    <TextBlock Text="{Binding Description}" Style="{StaticResource CaptionStyle}"
+                                               TextWrapping="Wrap" Margin="0,7,0,0" MaxHeight="54" TextTrimming="CharacterEllipsis" />
+
+                                    <Grid Margin="0,9,0,0">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+                                        <StackPanel Orientation="Horizontal">
+                                            <Border Style="{StaticResource PillGreyStyle}" Margin="0,0,5,0">
+                                                <TextBlock Text="{Binding RiskText}">
+                                                    <TextBlock.Style>
+                                                        <Style TargetType="TextBlock" BasedOn="{StaticResource PillTextStyle}">
+                                                            <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}" />
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding IsHighRisk}" Value="True">
+                                                                    <Setter Property="Foreground" Value="{DynamicResource DangerBrush}" />
+                                                                </DataTrigger>
+                                                                <DataTrigger Binding="{Binding IsMediumRisk}" Value="True">
+                                                                    <Setter Property="Foreground" Value="{DynamicResource WarningBrush}" />
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </TextBlock.Style>
+                                                </TextBlock>
+                                            </Border>
+                                            <Border Style="{StaticResource PillGreyStyle}">
+                                                <TextBlock Text="{Binding Category}" Style="{StaticResource PillTextStyle}"
+                                                           Foreground="{DynamicResource TextSecondaryBrush}" />
+                                            </Border>
+                                        </StackPanel>
+                                        <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                            <TextBlock Text="{Binding ParameterCountText}" Style="{StaticResource CaptionStyle}"
+                                                       HorizontalAlignment="Right" />
+                                            <TextBlock Text="{Binding SettingsText}" Style="{StaticResource CaptionStyle}"
+                                                       HorizontalAlignment="Right" FontSize="10.5" />
+                                        </StackPanel>
+                                    </Grid>
+
+                                    <TextBlock Text="{Binding PreviewError}" Foreground="{DynamicResource DangerBrush}"
+                                               FontSize="11" TextWrapping="Wrap" Margin="0,6,0,0"
+                                               Visibility="{Binding HasError, Converter={StaticResource BooleanToVisibilityConverter}}" />
+                                </StackPanel>
+                            </Border>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+
+                <Grid Margin="0,8,0,0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <Button Grid.Column="0" Style="{StaticResource SecondaryButtonStyle}"
+                            Command="{Binding SetPageCommand}" CommandParameter="machines">
+                        <StackPanel Orientation="Horizontal">
+                            <controls:LucideIcon Icon="ChevronLeft" Width="14" Height="14" Margin="0,0,6,0" />
+                            <TextBlock Text="Comptes" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </Button>
+                    <Button Grid.Column="2" Style="{StaticResource PrimaryButtonStyle}"
+                            IsEnabled="{Binding CanContinueToParams}"
+                            Command="{Binding SetPageCommand}" CommandParameter="params">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="Continuer : paramètres" VerticalAlignment="Center" />
+                            <controls:LucideIcon Icon="ArrowRight" Width="14" Height="14" Margin="7,0,0,0" />
+                        </StackPanel>
+                    </Button>
+                </Grid>
+            </StackPanel>
+
+            <!-- ================= ÉTAPE 3 : PARAMÈTRES ================= -->
+            <StackPanel Visibility="{Binding IsParamsPage, Converter={StaticResource BooleanToVisibilityConverter}}">
+                <TextBlock Text="ÉTAPE 3" Style="{StaticResource PageTagStyle}" />
+                <StackPanel Orientation="Horizontal">
+                    <controls:LucideIcon Icon="SlidersHorizontal" Width="20" Height="20" Stroke="{DynamicResource TextPrimaryBrush}" />
+                    <TextBlock Text="Paramètres des GPO" Style="{StaticResource PageHeadingStyle}"
+                               Margin="10,0,0,0" VerticalAlignment="Center" />
+                </StackPanel>
+                <TextBlock Style="{StaticResource PageSubtitleStyle}"
+                           Text="Chaque paramètre configuré ici sera appliqué tel quel aux machines sélectionnées (valeurs de registre réelles + gpupdate /force)." />
+
+                <Border Style="{StaticResource PanelStyle}" Margin="0,12,0,4"
+                        Visibility="{Binding HasTemplates, Converter={StaticResource InverseBooleanToVisibilityConverter}}">
+                    <StackPanel>
+                        <TextBlock Text="Aucune GPO sélectionnée." FontWeight="SemiBold" />
+                        <TextBlock Text="Revenez à l'étape 2 pour choisir les stratégies à appliquer."
+                                   Style="{StaticResource CaptionStyle}" Margin="0,3,0,0" />
+                    </StackPanel>
+                </Border>
+
+                <ItemsControl ItemsSource="{Binding SelectedTemplates}" Margin="0,12,0,0">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Border Style="{StaticResource DemoCardStyle}" Margin="0,0,0,12">
+                                <StackPanel>
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+                                        <StackPanel Grid.Column="0">
+                                            <TextBlock Text="{Binding DisplayName}" FontSize="14.5" FontWeight="SemiBold"
+                                                       Foreground="{DynamicResource TextPrimaryBrush}" />
+                                            <TextBlock Style="{StaticResource CaptionStyle}" Margin="0,2,0,0">
+                                                <Run Text="{Binding Category, Mode=OneWay}" />
+                                                <Run Text=" · " />
+                                                <Run Text="{Binding SettingsText, Mode=OneWay}" />
+                                                <Run Text=" par machine" />
+                                            </TextBlock>
+                                        </StackPanel>
+                                        <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Top">
+                                            <Border Style="{StaticResource PillCyanStyle}" Margin="0,0,5,0">
+                                                <TextBlock Text="{Binding ScopeText}" Style="{StaticResource PillTextStyle}"
+                                                           Foreground="{DynamicResource AccentBrush}" />
+                                            </Border>
+                                            <Border Style="{StaticResource PillGreyStyle}">
+                                                <TextBlock Text="{Binding RiskText}" Style="{StaticResource PillTextStyle}"
+                                                           Foreground="{DynamicResource TextSecondaryBrush}" />
+                                            </Border>
+                                        </StackPanel>
+                                    </Grid>
+
+                                    <ItemsControl ItemsSource="{Binding Parameters}" Margin="0,6,0,0">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <Border BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,1,0,0" Padding="0,10,0,4">
+                                                    <StackPanel>
+                                                        <TextBlock Text="{Binding DisplayName}" FontSize="13" FontWeight="SemiBold" />
+                                                        <TextBlock Text="{Binding Description}" Style="{StaticResource HintStyle}"
+                                                                   Visibility="{Binding Description, Converter={StaticResource EmptyStringToCollapsedConverter}}" />
+
+                                                        <CheckBox Style="{StaticResource DemoCheckBoxStyle}" Margin="0,7,0,0"
+                                                                  IsChecked="{Binding BoolValue, Mode=TwoWay}"
+                                                                  Content="Activer ce réglage"
+                                                                  Visibility="{Binding IsBoolean, Converter={StaticResource BooleanToVisibilityConverter}}" />
+
+                                                        <ComboBox Style="{StaticResource SelectStyle}" Margin="0,7,0,0" MaxWidth="360"
+                                                                  HorizontalAlignment="Left"
+                                                                  ItemsSource="{Binding Options}"
+                                                                  SelectedItem="{Binding Value, Mode=TwoWay}"
+                                                                  Visibility="{Binding IsEnum, Converter={StaticResource BooleanToVisibilityConverter}}" />
+
+                                                        <TextBox Style="{StaticResource InputStyle}" Margin="0,7,0,0"
+                                                                 Text="{Binding Value, UpdateSourceTrigger=PropertyChanged}"
+                                                                 Visibility="{Binding IsText, Converter={StaticResource BooleanToVisibilityConverter}}" />
+
+                                                        <TextBox Style="{StaticResource InputStyle}" Margin="0,7,0,0" Height="86"
+                                                                 AcceptsReturn="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto"
+                                                                 FontFamily="Consolas, Courier New, monospace" FontSize="12.5"
+                                                                 Text="{Binding Value, UpdateSourceTrigger=PropertyChanged}"
+                                                                 Visibility="{Binding IsMultiline, Converter={StaticResource BooleanToVisibilityConverter}}" />
+                                                    </StackPanel>
+                                                </Border>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </StackPanel>
+                            </Border>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+
+                <Grid Margin="0,4,0,0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <Button Grid.Column="0" Style="{StaticResource SecondaryButtonStyle}"
+                            Command="{Binding SetPageCommand}" CommandParameter="gpos">
+                        <StackPanel Orientation="Horizontal">
+                            <controls:LucideIcon Icon="ChevronLeft" Width="14" Height="14" Margin="0,0,6,0" />
+                            <TextBlock Text="GPO" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </Button>
+                    <Button Grid.Column="2" Style="{StaticResource PrimaryButtonStyle}"
+                            IsEnabled="{Binding CanContinueToParams}"
+                            Command="{Binding SetPageCommand}" CommandParameter="deploy">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="Continuer : application" VerticalAlignment="Center" />
+                            <controls:LucideIcon Icon="ArrowRight" Width="14" Height="14" Margin="7,0,0,0" />
+                        </StackPanel>
+                    </Button>
+                </Grid>
+            </StackPanel>
+
+            <!-- ================= ÉTAPE 4 : DÉPLOIEMENT ================= -->
+            <StackPanel Visibility="{Binding IsDeployPage, Converter={StaticResource BooleanToVisibilityConverter}}">
+                <TextBlock Text="ÉTAPE 4" Style="{StaticResource PageTagStyle}" />
+                <StackPanel Orientation="Horizontal">
+                    <controls:LucideIcon Icon="Rocket" Width="20" Height="20" Stroke="{DynamicResource TextPrimaryBrush}" />
+                    <TextBlock Text="Appliquer les GPO aux machines" Style="{StaticResource PageHeadingStyle}"
+                               Margin="10,0,0,0" VerticalAlignment="Center" />
+                </StackPanel>
+                <TextBlock Style="{StaticResource PageSubtitleStyle}"
+                           Text="Le protocole du projet exécute tout : création de la GPO dans le domaine, liaison OU transparente via New-GPLink, écriture des paramètres, filtrage de sécurité AD DS, gpupdate /force puis validation automatique." />
+
+                <Border Style="{StaticResource DemoCardStyle}" Margin="0,14,0,0">
+                    <StackPanel>
+                        <TextBlock Text="Protocole projet — application automatisée" FontSize="15" FontWeight="SemiBold" />
+                        <WrapPanel Margin="0,12,0,12">
+                            <Border Style="{StaticResource PillCyanStyle}" Margin="0,0,8,6">
+                                <StackPanel Orientation="Horizontal">
+                                    <Border Background="Transparent" Width="20" Height="20" Margin="0,0,5,0">
+                                        <TextBlock Text="1" FontWeight="Bold" FontSize="11" Foreground="{DynamicResource AccentBrush}"
+                                                   HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                    </Border>
+                                    <TextBlock Text="Cibler le poste / l'OU" Style="{StaticResource PillTextStyle}"
+                                               Foreground="{DynamicResource TextPrimaryBrush}" VerticalAlignment="Center" />
+                                </StackPanel>
+                            </Border>
+                            <Border Style="{StaticResource PillGreyStyle}" Margin="0,0,8,6">
+                                <TextBlock Style="{StaticResource PillTextStyle}" Foreground="{DynamicResource TextSecondaryBrush}">
+                                    <Run Text="2 · " /><Run Text="New-GPLink transparent" />
+                                </TextBlock>
+                            </Border>
+                            <Border Style="{StaticResource PillGreyStyle}" Margin="0,0,8,6">
+                                <TextBlock Text="3 · Paramètres du projet" Style="{StaticResource PillTextStyle}"
+                                           Foreground="{DynamicResource TextSecondaryBrush}" />
+                            </Border>
+                            <Border Style="{StaticResource PillGreyStyle}" Margin="0,0,8,6">
+                                <TextBlock Text="4 · gpupdate /force + validation" Style="{StaticResource PillTextStyle}"
+                                           Foreground="{DynamicResource TextSecondaryBrush}" />
+                            </Border>
+                        </WrapPanel>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Grid.Column="0" VerticalAlignment="Center" Margin="0,0,12,0">
+                                <TextBlock Text="{Binding DeploySummary}" TextWrapping="Wrap" FontSize="12.5" />
+                                <TextBlock Text="{Binding TargetUsersText}" Style="{StaticResource CaptionStyle}" Margin="0,4,0,0" TextWrapping="Wrap" />
+                            </StackPanel>
+                            <StackPanel Grid.Column="1" Orientation="Horizontal">
+                                <Button Style="{StaticResource DemoSmallDangerButtonStyle}" Margin="0,0,8,0"
+                                        Command="{Binding CancelDeployCommand}"
+                                        AutomationProperties.Name="Annuler le déploiement"
+                                        Visibility="{Binding IsDeploying, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                    <StackPanel Orientation="Horizontal">
+                                        <controls:LucideIcon Icon="Stop" Width="13" Height="13" />
+                                        <TextBlock Text="Annuler" Margin="6,0,0,0" VerticalAlignment="Center" />
+                                    </StackPanel>
+                                </Button>
+                                <Button Style="{StaticResource PrimaryButtonStyle}"
+                                        Command="{Binding DeployCommand}" IsEnabled="{Binding CanDeploy}">
+                                    <StackPanel Orientation="Horizontal">
+                                        <controls:LucideIcon Icon="Rocket" Width="14" Height="14" />
+                                        <TextBlock Text="{Binding DeploymentButtonText}" Margin="7,0,0,0" VerticalAlignment="Center" />
+                                    </StackPanel>
+                                </Button>
+                            </StackPanel>
+                        </Grid>
+                    </StackPanel>
+                </Border>
+
+                <UniformGrid Columns="4" Margin="0,12,0,0">
+                    <Border Style="{StaticResource DemoCardStyle}" Margin="0,0,8,0">
+                        <StackPanel>
+                            <DockPanel>
+                                <controls:LucideIcon Icon="Monitor" Width="14" Height="14" DockPanel.Dock="Left" VerticalAlignment="Top" Stroke="{DynamicResource TextTertiaryBrush}" />
+                                <TextBlock Text="MACHINES CIBLÉES" TextWrapping="Wrap" Style="{StaticResource FieldLabelStyle}" Margin="6,0,0,0" />
+                            </DockPanel>
+                            <TextBlock Text="{Binding SelectedMachineCount}" Style="{StaticResource MetricValueStyle}" Margin="0,8,0,0" />
+                            <TextBlock Text="postes sélectionnés" TextWrapping="Wrap" Style="{StaticResource CaptionStyle}" />
+                        </StackPanel>
+                    </Border>
+                    <Border Style="{StaticResource DemoCardStyle}" Margin="4,0,4,0">
+                        <StackPanel>
+                            <DockPanel>
+                                <controls:LucideIcon Icon="ListChecks" Width="14" Height="14" DockPanel.Dock="Left" VerticalAlignment="Top" Stroke="{DynamicResource TextTertiaryBrush}" />
+                                <TextBlock Text="GPO APPLIQUÉES" TextWrapping="Wrap" Style="{StaticResource FieldLabelStyle}" Margin="6,0,0,0" />
+                            </DockPanel>
+                            <TextBlock Text="{Binding SelectedGpoCount}" Style="{StaticResource MetricValueStyle}"
+                                       Foreground="{DynamicResource AccentBrush}" Margin="0,8,0,0" />
+                            <TextBlock TextWrapping="Wrap" Style="{StaticResource CaptionStyle}">
+                                <Run Text="{Binding ComputerScopeCount, Mode=OneWay}" /><Run Text=" ordinateur · " /><Run Text="{Binding UserScopeCount, Mode=OneWay}" /><Run Text=" utilisateur" />
+                            </TextBlock>
+                        </StackPanel>
+                    </Border>
+                    <Border Style="{StaticResource DemoCardStyle}" Margin="4,0,4,0">
+                        <StackPanel>
+                            <DockPanel>
+                                <controls:LucideIcon Icon="SlidersHorizontal" Width="14" Height="14" DockPanel.Dock="Left" VerticalAlignment="Top" Stroke="{DynamicResource TextTertiaryBrush}" />
+                                <TextBlock Text="PARAMÈTRES CONFIGURÉS" TextWrapping="Wrap" Style="{StaticResource FieldLabelStyle}" Margin="6,0,0,0" />
+                            </DockPanel>
+                            <TextBlock Text="{Binding TotalConfiguredParameters}" Style="{StaticResource MetricValueStyle}"
+                                       Foreground="{DynamicResource SuccessBrush}" Margin="0,8,0,0" />
+                            <TextBlock Text="totaux sur les GPO sélectionnées" TextWrapping="Wrap" Style="{StaticResource CaptionStyle}" />
+                        </StackPanel>
+                    </Border>
+                    <Border Style="{StaticResource DemoCardStyle}" Margin="8,0,0,0">
+                        <StackPanel>
+                            <DockPanel>
+                                <controls:LucideIcon Icon="Database" Width="14" Height="14" DockPanel.Dock="Left" VerticalAlignment="Top" Stroke="{DynamicResource TextTertiaryBrush}" />
+                                <TextBlock Text="ÉCRITURES REGISTRE PRÉVUES" TextWrapping="Wrap" Style="{StaticResource FieldLabelStyle}" Margin="6,0,0,0" />
+                            </DockPanel>
+                            <TextBlock Text="{Binding PlannedWriteCount}" Style="{StaticResource MetricValueStyle}" Margin="0,8,0,0" />
+                            <TextBlock Text="valeurs réelles écrites sur les postes" TextWrapping="Wrap" Style="{StaticResource CaptionStyle}" />
+                        </StackPanel>
+                    </Border>
+                </UniformGrid>
+
+                <ItemsControl ItemsSource="{Binding Warnings}" Margin="0,12,0,0">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Border Padding="11,9" CornerRadius="10" BorderThickness="1" Margin="0,0,0,7">
+                                <Border.Style>
+                                    <Style TargetType="Border">
+                                        <Setter Property="Background" Value="{DynamicResource AccentSoftBrush}" />
+                                        <Setter Property="BorderBrush" Value="{DynamicResource AccentBorderBrush}" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsWarning}" Value="True">
+                                                <Setter Property="Background" Value="{DynamicResource WarningSoftBrush}" />
+                                                <Setter Property="BorderBrush" Value="{DynamicResource WarningBorderBrush}" />
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding IsError}" Value="True">
+                                                <Setter Property="Background" Value="{DynamicResource DangerSoftBrush}" />
+                                                <Setter Property="BorderBrush" Value="{DynamicResource DangerBorderBrush}" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Border.Style>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <controls:LucideIcon Grid.Column="0" Width="15" Height="15" Margin="0,0,9,0"
+                                                         VerticalAlignment="Top">
+                                        <controls:LucideIcon.Style>
+                                            <Style TargetType="controls:LucideIcon" BasedOn="{StaticResource {x:Type controls:LucideIcon}}">
+                                                <Setter Property="Icon" Value="Info" />
+                                                <Setter Property="Stroke" Value="{DynamicResource AccentBrush}" />
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding IsWarning}" Value="True">
+                                                        <Setter Property="Icon" Value="TriangleAlert" />
+                                                        <Setter Property="Stroke" Value="{DynamicResource WarningBrush}" />
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding IsError}" Value="True">
+                                                        <Setter Property="Icon" Value="CircleX" />
+                                                        <Setter Property="Stroke" Value="{DynamicResource DangerBrush}" />
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </controls:LucideIcon.Style>
+                                    </controls:LucideIcon>
+                                    <TextBlock Grid.Column="1" Text="{Binding Message}" TextWrapping="Wrap" FontSize="12.5" />
+                                </Grid>
+                            </Border>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+
+                <Border Style="{StaticResource DemoCardStyle}" Margin="0,12,0,0">
+                    <StackPanel>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="Console d'exécution" FontSize="15" FontWeight="SemiBold" />
+                            <TextBlock Grid.Column="1" Text="{Binding DeployStatusText}" Style="{StaticResource CaptionStyle}"
+                                       VerticalAlignment="Center" MaxWidth="520" TextTrimming="CharacterEllipsis" />
+                        </Grid>
+                        <ProgressBar Style="{StaticResource DemoProgressStyle}" Value="{Binding DeployProgress}" Maximum="100" Margin="0,10,0,10" />
+                        <Border Background="{DynamicResource ConsoleBackgroundBrush}" CornerRadius="10" Padding="14,12">
+                            <ScrollViewer x:Name="DeployConsoleScroll" MaxHeight="300" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                                <ItemsControl ItemsSource="{Binding ConsoleLines}">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <TextBlock Style="{StaticResource ConsoleLineStyle}">
+                                                <Run Text="{Binding TimeText, Mode=OneWay}" Foreground="{StaticResource ConsoleMutedBrush}" />
+                                                <Run Text="  " />
+                                                <Run Text="{Binding DisplayText, Mode=OneWay}" Foreground="{Binding ColorHex}" />
+                                            </TextBlock>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </ScrollViewer>
+                        </Border>
+                    </StackPanel>
+                </Border>
+
+                <Border Style="{StaticResource DemoCardStyle}" Margin="0,12,0,0"
+                        Visibility="{Binding HasDeployedResult, Converter={StaticResource BooleanToVisibilityConverter}}">
+                    <StackPanel>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="{Binding DeployResultTitle}" FontSize="15" FontWeight="SemiBold"
+                                       TextWrapping="Wrap" VerticalAlignment="Center" />
+                            <Button Grid.Column="1" Style="{StaticResource PrimaryButtonStyle}" Command="{Binding GoToClientsCommand}">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="Vérifier sur les postes clients" VerticalAlignment="Center" />
+                                    <controls:LucideIcon Icon="ArrowRight" Width="14" Height="14" Margin="7,0,0,0" />
+                                </StackPanel>
+                            </Button>
+                        </Grid>
+                        <Grid Margin="0,12,0,4">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="180" />
+                                <ColumnDefinition Width="100" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0" Text="MACHINE" Style="{StaticResource ColumnHeaderStyle}" />
+                            <TextBlock Grid.Column="1" Text="RÉSULTAT" Style="{StaticResource ColumnHeaderStyle}" />
+                            <TextBlock Grid.Column="2" Text="DÉTAIL" Style="{StaticResource ColumnHeaderStyle}" />
+                        </Grid>
+                        <ItemsControl ItemsSource="{Binding DeploymentResults}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Border BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,1,0,0" Padding="0,7">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="180" />
+                                                <ColumnDefinition Width="100" />
+                                                <ColumnDefinition Width="*" />
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock Grid.Column="0" Text="{Binding MachineName}" FontWeight="SemiBold" FontSize="12.5" />
+                                            <Border Grid.Column="1" HorizontalAlignment="Left">
+                                                <Border.Style>
+                                                    <Style TargetType="Border" BasedOn="{StaticResource PillGreenStyle}">
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding IsSuccess}" Value="False">
+                                                                <Setter Property="Background" Value="{DynamicResource DangerSoftBrush}" />
+                                                                <Setter Property="BorderBrush" Value="{DynamicResource DangerBorderBrush}" />
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </Border.Style>
+                                                <StackPanel Orientation="Horizontal">
+                                                    <controls:LucideIcon Width="12" Height="12" VerticalAlignment="Center">
+                                                        <controls:LucideIcon.Style>
+                                                            <Style TargetType="controls:LucideIcon"
+                                                                   BasedOn="{StaticResource {x:Type controls:LucideIcon}}">
+                                                                <Setter Property="Icon" Value="CircleCheck" />
+                                                                <Setter Property="Stroke" Value="{DynamicResource SuccessBrush}" />
+                                                                <Style.Triggers>
+                                                                    <DataTrigger Binding="{Binding IsSuccess}" Value="False">
+                                                                        <Setter Property="Icon" Value="CircleX" />
+                                                                        <Setter Property="Stroke" Value="{DynamicResource DangerBrush}" />
+                                                                    </DataTrigger>
+                                                                </Style.Triggers>
+                                                            </Style>
+                                                        </controls:LucideIcon.Style>
+                                                    </controls:LucideIcon>
+                                                    <TextBlock Text="{Binding StatusText}">
+                                                        <TextBlock.Style>
+                                                            <Style TargetType="TextBlock" BasedOn="{StaticResource PillTextStyle}">
+                                                                <Setter Property="Margin" Value="6,0,0,0" />
+                                                                <Setter Property="Foreground" Value="{DynamicResource SuccessBrush}" />
+                                                                <Style.Triggers>
+                                                                    <DataTrigger Binding="{Binding IsSuccess}" Value="False">
+                                                                        <Setter Property="Foreground" Value="{DynamicResource DangerBrush}" />
+                                                                    </DataTrigger>
+                                                                </Style.Triggers>
+                                                            </Style>
+                                                        </TextBlock.Style>
+                                                    </TextBlock>
+                                                </StackPanel>
+                                            </Border>
+                                            <TextBlock Grid.Column="2" Text="{Binding Detail}" Style="{StaticResource CaptionStyle}"
+                                                       TextWrapping="Wrap" VerticalAlignment="Center" />
+                                        </Grid>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+
+            <!-- ================= PAGE : CONSOLE DU POSTE ================= -->
+            <StackPanel Visibility="{Binding IsClientsPage, Converter={StaticResource BooleanToVisibilityConverter}}">
+                <TextBlock Text="VÉRIFICATION COMME AU RÉEL" Style="{StaticResource PageTagStyle}" />
+                <StackPanel Orientation="Horizontal">
+                    <controls:LucideIcon Icon="Monitor" Width="20" Height="20" Stroke="{DynamicResource TextPrimaryBrush}" />
+                    <TextBlock Text="Postes clients &amp; console" Style="{StaticResource PageHeadingStyle}"
+                               Margin="10,0,0,0" VerticalAlignment="Center" />
+                </StackPanel>
+                <TextBlock Style="{StaticResource PageSubtitleStyle}"
+                           Text="Ouvrez la console d'un poste pour vérifier ce que les GPO ont réellement appliqué : valeurs de registre, gpresult /r et journal des opérations." />
+                <TextBlock Text="{Binding MachinesSummaryText}" Style="{StaticResource CaptionStyle}" Margin="0,4,0,0" />
+
+                <ItemsControl ItemsSource="{Binding Machines}" Margin="0,10,0,4">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <WrapPanel />
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Button Style="{StaticResource MachineChipButtonStyle}"
+                                    Command="{Binding DataContext.OpenClientConsoleCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                    CommandParameter="{Binding}"
+                                    AutomationProperties.Name="{Binding Name}">
+                                <StackPanel>
+                                    <StackPanel Orientation="Horizontal">
+                                        <controls:LucideIcon Width="12" Height="12" VerticalAlignment="Center">
+                                            <controls:LucideIcon.Style>
+                                                <Style TargetType="controls:LucideIcon"
+                                                       BasedOn="{StaticResource {x:Type controls:LucideIcon}}">
+                                                    <Setter Property="Icon" Value="Circle" />
+                                                    <Setter Property="Stroke" Value="{DynamicResource TextTertiaryBrush}" />
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding IsOnline}" Value="True">
+                                                            <Setter Property="Icon" Value="CircleCheck" />
+                                                            <Setter Property="Stroke" Value="{DynamicResource SuccessBrush}" />
+                                                        </DataTrigger>
+                                                        <DataTrigger Binding="{Binding IsOffline}" Value="True">
+                                                            <Setter Property="Icon" Value="CircleX" />
+                                                            <Setter Property="Stroke" Value="{DynamicResource DangerBrush}" />
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </controls:LucideIcon.Style>
+                                        </controls:LucideIcon>
+                                        <TextBlock Text="{Binding Name}" FontSize="13" FontWeight="SemiBold" Margin="6,0,0,0" />
+                                    </StackPanel>
+                                    <TextBlock Style="{StaticResource CaptionStyle}" FontSize="10.5" Margin="18,2,0,0">
+                                        <Run Text="{Binding StatusText, Mode=OneWay}" /><Run Text=" · " /><Run Text="{Binding IpText, Mode=OneWay}" />
+                                    </TextBlock>
+                                    <TextBlock Text="{Binding RecordCountText}" Style="{StaticResource CaptionStyle}"
+                                               FontSize="10.5" Margin="18,0,0,0" />
+                                </StackPanel>
+                            </Button>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+
+                <Border Style="{StaticResource DemoCardStyle}" Margin="0,10,0,0">
+                    <StackPanel>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Grid.Column="0">
+                                <TextBlock Text="CONSOLE DU POSTE · GPO RÉELLES" Style="{StaticResource PageTagStyle}" />
+                                <TextBlock Text="{Binding ClientHeaderText}" FontSize="17" FontWeight="SemiBold" />
+                                <TextBlock Text="{Binding ClientSubText}" Style="{StaticResource CaptionStyle}" Margin="0,3,0,0" />
+                                <TextBlock Text="{Binding ClientStatusText}" Foreground="{DynamicResource AccentBrush}"
+                                           FontSize="11.5" TextWrapping="Wrap" Margin="0,5,0,0"
+                                           Visibility="{Binding ClientStatusText, Converter={StaticResource EmptyStringToCollapsedConverter}}" />
+                            </StackPanel>
+                            <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Top"
+                                        Visibility="{Binding HasSelectedClient, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                <Button Style="{StaticResource DemoSmallButtonStyle}" Margin="0,0,6,0"
+                                        Command="{Binding RefreshClientCommand}"
+                                        ToolTip="Force le rafraîchissement des stratégies sur le poste (gpupdate /force)">
+                                    <StackPanel Orientation="Horizontal">
+                                        <controls:LucideIcon Icon="RefreshCw" Width="13" Height="13" />
+                                        <TextBlock Text="gpupdate /force" Margin="6,0,0,0" VerticalAlignment="Center" />
+                                    </StackPanel>
+                                </Button>
+                                <Button Style="{StaticResource DemoSmallPrimaryButtonStyle}" Margin="0,0,6,0"
+                                        Command="{Binding VerifyClientCommand}"
+                                        ToolTip="Lit gpresult /r sur le poste : liste exacte des GPO appliquées">
+                                    <StackPanel Orientation="Horizontal">
+                                        <controls:LucideIcon Icon="ShieldCheck" Width="13" Height="13" />
+                                        <TextBlock Text="Vérifier (gpresult)" Margin="6,0,0,0" VerticalAlignment="Center" />
+                                    </StackPanel>
+                                </Button>
+                                <Button Style="{StaticResource DemoSmallDangerButtonStyle}"
+                                        Command="{Binding DetachAllRecordsCommand}"
+                                        AutomationProperties.Name="Détacher toutes les GPO enregistrées"
+                                        Visibility="{Binding HasClientRecords, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                    <StackPanel Orientation="Horizontal">
+                                        <controls:LucideIcon Icon="ArrowRightLeft" Width="13" Height="13" />
+                                        <TextBlock Text="Détacher tout" Margin="6,0,0,0" VerticalAlignment="Center" />
+                                    </StackPanel>
+                                </Button>
+                            </StackPanel>
+                        </Grid>
+
+                        <Border Margin="0,12,0,0" Padding="14,12" CornerRadius="10" BorderThickness="1"
+                                Background="{DynamicResource PanelSoftBrush}" BorderBrush="{DynamicResource BorderBrush}"
+                                Visibility="{Binding HasSelectedClient, Converter={StaticResource BooleanToVisibilityConverter}}">
+                            <StackPanel>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0">
+                                        <TextBlock Text="CONTRÔLE AD DS · CYCLE DE VIE DU POSTE" Style="{StaticResource PageTagStyle}" />
+                                        <StackPanel Orientation="Horizontal" Margin="0,5,0,0">
+                                            <Border Style="{StaticResource PillGreenStyle}"
+                                                    Visibility="{Binding CurrentClient.IsAccountEnabled, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                                <TextBlock Text="Compte AD activé" Style="{StaticResource PillTextStyle}"
+                                                           Foreground="{DynamicResource SuccessBrush}" />
+                                            </Border>
+                                            <Border Style="{StaticResource PillRedStyle}"
+                                                    Visibility="{Binding CurrentClient.IsAccountDisabled, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                                <TextBlock Text="Compte AD désactivé" Style="{StaticResource PillTextStyle}"
+                                                           Foreground="{DynamicResource DangerBrush}" />
+                                            </Border>
+                                        </StackPanel>
+                                        <TextBlock Text="{Binding CurrentClient.LastLogonText}" Style="{StaticResource CaptionStyle}"
+                                                   Margin="0,4,0,0" TextWrapping="Wrap" />
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center"
+                                                Margin="12,0,0,0">
+                                        <Button Style="{StaticResource DemoSmallButtonStyle}" Margin="0,0,6,0"
+                                                IsEnabled="{Binding CanControlClient}"
+                                                Command="{Binding ToggleComputerAccountCommand}">
+                                            <StackPanel Orientation="Horizontal">
+                                                <controls:LucideIcon Icon="Power" Width="13" Height="13" />
+                                                <TextBlock Text="{Binding CurrentClient.AccountActionText}" Margin="6,0,0,0" VerticalAlignment="Center" />
+                                            </StackPanel>
+                                        </Button>
+                                        <Button Style="{StaticResource DemoSmallButtonStyle}" Margin="0,0,6,0"
+                                                IsEnabled="{Binding CanControlClient}"
+                                                Command="{Binding RestartClientComputerCommand}">
+                                            <StackPanel Orientation="Horizontal">
+                                                <controls:LucideIcon Icon="RotateCcw" Width="13" Height="13" />
+                                                <TextBlock Text="Redémarrer" Margin="6,0,0,0" VerticalAlignment="Center" />
+                                            </StackPanel>
+                                        </Button>
+                                        <Button Style="{StaticResource DemoSmallDangerButtonStyle}"
+                                                IsEnabled="{Binding CanControlClient}"
+                                                Command="{Binding ShutdownClientComputerCommand}">
+                                            <StackPanel Orientation="Horizontal">
+                                                <controls:LucideIcon Icon="Power" Width="13" Height="13" />
+                                                <TextBlock Text="Éteindre" Margin="6,0,0,0" VerticalAlignment="Center" />
+                                            </StackPanel>
+                                        </Button>
+                                    </StackPanel>
+                                </Grid>
+
+                                <Border BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,1,0,0"
+                                        Margin="0,10,0,0" Padding="0,10,0,0">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto" />
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Grid.Column="0" Text="Déplacer vers l'OU" Style="{StaticResource FieldLabelStyle}"
+                                                   VerticalAlignment="Center" Margin="0,0,10,0" />
+                                        <ComboBox Grid.Column="1" Style="{StaticResource ComboBoxStyle}"
+                                                  ItemsSource="{Binding AvailableOus}"
+                                                  DisplayMemberPath="DisplayName"
+                                                  SelectedValuePath="DistinguishedName"
+                                                  SelectedValue="{Binding SelectedTargetOu, Mode=TwoWay}"
+                                                  IsEnabled="{Binding CanControlClient}"
+                                                  ToolTip="L'unité d'organisation cible dans AD DS." />
+                                        <Button Grid.Column="2" Style="{StaticResource DemoSmallPrimaryButtonStyle}"
+                                                Margin="8,0,0,0" IsEnabled="{Binding CanMoveClient}"
+                                                Command="{Binding MoveComputerToOuCommand}">
+                                            <StackPanel Orientation="Horizontal">
+                                                <controls:LucideIcon Icon="Folder" Width="13" Height="13" />
+                                                <TextBlock Text="Déplacer" Margin="6,0,0,0" VerticalAlignment="Center" />
+                                            </StackPanel>
+                                        </Button>
+                                    </Grid>
+                                </Border>
+                                <TextBlock Text="Ces actions modifient réellement AD DS et le poste : chaque opération demande une confirmation puis est auditée."
+                                           Style="{StaticResource CaptionStyle}" FontSize="10.5" Margin="0,8,0,0" TextWrapping="Wrap" />
+                            </StackPanel>
+                        </Border>
+
+                        <Border Style="{StaticResource PanelStyle}" Margin="0,12,0,0"
+                                Visibility="{Binding HasSelectedClient, Converter={StaticResource InverseBooleanToVisibilityConverter}}">
+                            <StackPanel>
+                                <TextBlock Text="Sélectionnez un poste ci-dessus." FontWeight="SemiBold" />
+                                <TextBlock Text="Après un déploiement, ouvrez le poste pour vérifier les paramètres appliqués et lancer gpresult /r."
+                                           Style="{StaticResource CaptionStyle}" Margin="0,3,0,0" />
+                            </StackPanel>
+                        </Border>
+
+                        <StackPanel Visibility="{Binding HasSelectedClient, Converter={StaticResource BooleanToVisibilityConverter}}">
+                            <Border BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,0,0,1" Margin="0,12,0,0">
+                                <StackPanel Orientation="Horizontal">
+                                    <Button Content="Stratégies appliquées" Command="{Binding ShowClientAppliedCommand}">
+                                        <Button.Style>
+                                            <Style TargetType="Button" BasedOn="{StaticResource DemoTabButtonStyle}">
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding IsClientAppliedTab}" Value="True">
+                                                        <Setter Property="Foreground" Value="{DynamicResource AccentBrush}" />
+                                                        <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}" />
+                                                        <Setter Property="FontWeight" Value="SemiBold" />
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Button.Style>
+                                    </Button>
+                                    <Button Content="Registre" Command="{Binding ShowClientRegistryCommand}">
+                                        <Button.Style>
+                                            <Style TargetType="Button" BasedOn="{StaticResource DemoTabButtonStyle}">
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding IsClientRegistryTab}" Value="True">
+                                                        <Setter Property="Foreground" Value="{DynamicResource AccentBrush}" />
+                                                        <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}" />
+                                                        <Setter Property="FontWeight" Value="SemiBold" />
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Button.Style>
+                                    </Button>
+                                    <Button Content="gpresult /r" Command="{Binding ShowClientRsopCommand}">
+                                        <Button.Style>
+                                            <Style TargetType="Button" BasedOn="{StaticResource DemoTabButtonStyle}">
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding IsClientRsopTab}" Value="True">
+                                                        <Setter Property="Foreground" Value="{DynamicResource AccentBrush}" />
+                                                        <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}" />
+                                                        <Setter Property="FontWeight" Value="SemiBold" />
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Button.Style>
+                                    </Button>
+                                    <Button Content="Journal d'événements" Command="{Binding ShowClientEventsCommand}">
+                                        <Button.Style>
+                                            <Style TargetType="Button" BasedOn="{StaticResource DemoTabButtonStyle}">
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding IsClientEventsTab}" Value="True">
+                                                        <Setter Property="Foreground" Value="{DynamicResource AccentBrush}" />
+                                                        <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}" />
+                                                        <Setter Property="FontWeight" Value="SemiBold" />
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Button.Style>
+                                    </Button>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- Onglet stratégies appliquées -->
+                            <StackPanel Margin="0,10,0,0"
+                                        Visibility="{Binding IsClientAppliedTab, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                <TextBlock Text="{Binding ClientRecordSummary}" Style="{StaticResource CaptionStyle}" Margin="0,0,0,8" />
+                                <ItemsControl ItemsSource="{Binding ClientRecords}">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Border Background="{DynamicResource PanelSoftBrush}" BorderBrush="{DynamicResource BorderBrush}"
+                                                    BorderThickness="1" CornerRadius="10" Padding="12" Margin="0,0,0,8">
+                                                <Grid>
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="*" />
+                                                        <ColumnDefinition Width="Auto" />
+                                                    </Grid.ColumnDefinitions>
+                                                    <StackPanel Grid.Column="0">
+                                                        <TextBlock Text="{Binding GpoName}" FontWeight="SemiBold" FontSize="13" />
+                                                        <TextBlock Style="{StaticResource CaptionStyle}" Margin="0,3,0,0">
+                                                            <Run Text="{Binding TemplateName, Mode=OneWay}" /><Run Text=" · déployée le " /><Run Text="{Binding DeployedText, Mode=OneWay}" /><Run Text=" · " /><Run Text="{Binding SettingsCountText, Mode=OneWay}" />
+                                                        </TextBlock>
+                                                        <TextBlock Text="{Binding FilterGroupText}" Style="{StaticResource CaptionStyle}" FontSize="10.5" Margin="0,2,0,0" />
+                                                    </StackPanel>
+                                                    <Button Grid.Column="1" Content="Détacher" Style="{StaticResource DemoSmallDangerButtonStyle}"
+                                                            VerticalAlignment="Center"
+                                                            Command="{Binding DataContext.DetachRecordCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                            CommandParameter="{Binding}"
+                                                            Visibility="{Binding CanDetach, Converter={StaticResource BooleanToVisibilityConverter}}" />
+                                                </Grid>
+                                            </Border>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                                <Border Style="{StaticResource PanelStyle}"
+                                        Visibility="{Binding ClientHasNoRecords, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                    <StackPanel>
+                                        <TextBlock Text="Aucune GPO déployée par ADOps sur ce poste." FontWeight="SemiBold" />
+                                        <TextBlock Text="Utilisez « Vérifier (gpresult) » pour lire les stratégies réellement appliquées par le domaine."
+                                                   Style="{StaticResource CaptionStyle}" Margin="0,3,0,0" />
+                                    </StackPanel>
+                                </Border>
+                            </StackPanel>
+
+                            <!-- Onglet registre -->
+                            <StackPanel Margin="0,10,0,0"
+                                        Visibility="{Binding IsClientRegistryTab, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                <TextBlock Text="Valeurs de registre matérialisées lors du déploiement (HKLM pour les stratégies Ordinateur)."
+                                           Style="{StaticResource CaptionStyle}" Margin="0,0,0,8" />
+                                <ItemsControl ItemsSource="{Binding ClientRegistryGroups}">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <StackPanel Margin="0,0,0,10">
+                                                <TextBlock Text="{Binding Key}" FontFamily="Consolas, Courier New, monospace"
+                                                           FontSize="11.5" Foreground="{DynamicResource AccentBrush}" TextWrapping="Wrap" />
+                                                <Border BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" CornerRadius="8" Margin="0,4,0,0">
+                                                    <ItemsControl ItemsSource="{Binding Values}">
+                                                        <ItemsControl.ItemTemplate>
+                                                            <DataTemplate>
+                                                                <Grid>
+                                                                    <Grid.ColumnDefinitions>
+                                                                        <ColumnDefinition Width="190" />
+                                                                        <ColumnDefinition Width="110" />
+                                                                        <ColumnDefinition Width="*" />
+                                                                    </Grid.ColumnDefinitions>
+                                                                    <Border Grid.ColumnSpan="3" Background="{DynamicResource PanelSoftBrush}"
+                                                                            BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,0,0,1" />
+                                                                    <TextBlock Grid.Column="0" Text="{Binding Name}" Margin="10,5"
+                                                                               FontFamily="Consolas, Courier New, monospace" FontSize="12" />
+                                                                    <TextBlock Grid.Column="1" Text="{Binding Type}" Margin="10,5"
+                                                                               FontFamily="Consolas, Courier New, monospace" FontSize="12"
+                                                                               Foreground="{DynamicResource TextSecondaryBrush}" />
+                                                                    <TextBlock Grid.Column="2" Text="{Binding Value}" Margin="10,5"
+                                                                               FontFamily="Consolas, Courier New, monospace" FontSize="12"
+                                                                               TextWrapping="Wrap" />
+                                                                </Grid>
+                                                            </DataTemplate>
+                                                        </ItemsControl.ItemTemplate>
+                                                    </ItemsControl>
+                                                </Border>
+                                            </StackPanel>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </StackPanel>
+
+                            <!-- Onglet RSoP -->
+                            <StackPanel Margin="0,10,0,0"
+                                        Visibility="{Binding IsClientRsopTab, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                <TextBlock Text="{Binding ClientVerifySummary}" Style="{StaticResource CaptionStyle}" Margin="0,0,0,8" />
+                                <Border Background="{DynamicResource ConsoleBackgroundBrush}" CornerRadius="10" Padding="14,12">
+                                    <StackPanel>
+                                        <TextBlock Text="Microsoft (R) Windows (R) — Résolution de stratégie de groupe (gpresult /r)"
+                                                   Style="{StaticResource ConsoleLineStyle}" Foreground="{DynamicResource ConsoleAccentBrush}"
+                                                   Margin="0,0,0,8" />
+                                        <ItemsControl ItemsSource="{Binding ClientGpoResults}">
+                                            <ItemsControl.ItemTemplate>
+                                                <DataTemplate>
+                                                    <StackPanel Orientation="Horizontal" Margin="0,2,0,0">
+                                                        <controls:LucideIcon Icon="Check" Width="11" Height="11"
+                                                                             Stroke="{DynamicResource ConsoleSuccessBrush}"
+                                                                             Margin="8,0,6,0" VerticalAlignment="Center" />
+                                                        <TextBlock Style="{StaticResource ConsoleLineStyle}"
+                                                                   Text="{Binding Mode=OneWay}" TextWrapping="Wrap" />
+                                                    </StackPanel>
+                                                </DataTemplate>
+                                            </ItemsControl.ItemTemplate>
+                                        </ItemsControl>
+                                        <TextBlock Text="Lancez « Vérifier (gpresult) » pour interroger le poste." Style="{StaticResource ConsoleLineStyle}"
+                                                   Foreground="{StaticResource ConsoleMutedBrush}" />
+                                    </StackPanel>
+                                </Border>
+                            </StackPanel>
+
+                            <!-- Onglet événements -->
+                            <StackPanel Margin="0,10,0,0"
+                                        Visibility="{Binding IsClientEventsTab, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                <Border Background="{DynamicResource ConsoleBackgroundBrush}" CornerRadius="10" Padding="14,12">
+                                    <ScrollViewer x:Name="ClientEventsScroll" MaxHeight="320" VerticalScrollBarVisibility="Auto">
+                                        <ItemsControl ItemsSource="{Binding ClientEvents}">
+                                            <ItemsControl.ItemTemplate>
+                                                <DataTemplate>
+                                                    <TextBlock Style="{StaticResource ConsoleLineStyle}">
+                                                        <Run Text="{Binding TimeText, Mode=OneWay}" Foreground="{StaticResource ConsoleMutedBrush}" />
+                                                        <Run Text="  " />
+                                                        <Run Text="{Binding DisplayText, Mode=OneWay}" Foreground="{Binding ColorHex}" />
+                                                    </TextBlock>
+                                                </DataTemplate>
+                                            </ItemsControl.ItemTemplate>
+                                        </ItemsControl>
+                                    </ScrollViewer>
+                                </Border>
+                            </StackPanel>
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

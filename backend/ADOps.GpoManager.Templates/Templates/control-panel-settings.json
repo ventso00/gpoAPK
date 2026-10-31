@@ -1,0 +1,31 @@
+{
+  "schemaVersion": 1,
+  "templateId": "control-panel-settings",
+  "displayName": "Blocage du Panneau de configuration et des Paramètres Windows",
+  "category": "Restrictions",
+  "description": "Interdit l'ouverture du Panneau de configuration ET de l'application Paramètres Windows (PC settings) via la stratégie native « Interdire l'accès au Panneau de configuration et aux Paramètres PC » (NoControlPanel).",
+  "expectedEffect": "Le Panneau de configuration et l'application Paramètres ne s'ouvrent plus pour les utilisateurs ciblés : l'accès direct, les raccourcis, les entrées du menu Win+X et les commandes (control.exe, ms-settings:) sont refusés.",
+  "scope": "User",
+  "riskLevel": "Low",
+  "supportedClients": ["Windows 10", "Windows 11"],
+  "requirements": [
+    "Aucun prérequis ADMX (stratégie native NoControlPanel, fichier ControlPanel.admx)",
+    "Lier la GPO utilisateur à l'OU contenant les comptes utilisateurs standards ; les comptes d'administration doivent rester hors de portée (autre OU ou filtrage de sécurité)"
+  ],
+  "parameters": [
+    {
+      "name": "blockControlPanel",
+      "displayName": "Interdire l'accès au Panneau de configuration et aux Paramètres",
+      "type": "Boolean",
+      "description": "Vrai pour bloquer à la fois le Panneau de configuration et l'application Paramètres Windows pour les utilisateurs ciblés (stratégie officielle NoControlPanel).",
+      "isRequired": true
+    }
+  ],
+  "warnings": [
+    "Le blocage empêche aussi l'accès aux outils d'administration accessibles depuis le Panneau de configuration : les utilisateurs ciblés doivent disposer d'un autre canal de support informatique.",
+    "Cette restriction ne s'applique PAS aux comptes d'administration : vérifiez que la GPO n'est liée qu'à l'OU des utilisateurs standards, sinon appliquez un filtrage de sécurité (groupes autorisés uniquement).",
+    "Une variante étendue à l'ordinateur existe (Configuration ordinateur, ruche HKLM) : elle bloquerait aussi les administrateurs du poste et n'est pas recommandée pour un poste géré."
+  ],
+  "supportStatus": "Available",
+  "supportNote": "Chemins vérifiés : HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\Explorer!NoControlPanel=1 (Configuration utilisateur) ; variante machine HKLM\\...\\Policies\\Explorer!NoControlPanel=1. La même valeur bloque le Panneau de configuration et l'application Paramètres depuis Windows 10. Complément optionnel : valeur SettingsPageVisibility (même clé) pour masquer des pages précises de l'application Paramètres (ex. « hide:sound;bluetooth »)."
+}

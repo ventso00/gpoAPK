@@ -1,0 +1,8 @@
+Tableau de bord
+Comptes utilisateurs ciblés
+Gestion des GPO
+Paramètres des GPO
+Appliquer aux postes
+Postes clients & console
+Journal d'audit
+Paramètres & session

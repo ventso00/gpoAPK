@@ -1,0 +1,277 @@
+<UserControl x:Class="ADOps.GpoManager.App.Views.DashboardView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:controls="clr-namespace:ADOps.GpoManager.App.Controls"
+             xmlns:models="clr-namespace:ADOps.GpoManager.Core.Models;assembly=ADOps.GpoManager.Core">
+    <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="26,20,26,48" HorizontalScrollBarVisibility="Disabled">
+        <StackPanel MaxWidth="1240">
+
+            <!-- En-tête de page -->
+            <StackPanel Orientation="Horizontal">
+                <Border Width="34" Height="34" CornerRadius="10" Background="{DynamicResource AccentSoftBrush}"
+                        BorderBrush="{DynamicResource AccentBorderBrush}" BorderThickness="1" VerticalAlignment="Center">
+                    <controls:LucideIcon Icon="LayoutDashboard" Width="18" Height="18" Stroke="{DynamicResource AccentBrush}" />
+                </Border>
+                <StackPanel VerticalAlignment="Center" Margin="12,0,0,0">
+                    <TextBlock Text="Tableau de bord" Style="{StaticResource PageTitleStyle}" Margin="0" />
+                    <TextBlock Text="État de la session AD DS, instantané du parc et dernières opérations."
+                               Style="{StaticResource PageSubtitleStyle}" Margin="0,2,0,0" />
+                </StackPanel>
+            </StackPanel>
+
+            <!-- Indicateurs -->
+            <UniformGrid Columns="4" Margin="0,18,0,0">
+                <Border Style="{StaticResource DemoCardStyle}" Margin="0,0,8,0">
+                    <StackPanel>
+                        <DockPanel LastChildFill="True">
+                            <controls:LucideIcon Icon="Wifi" Width="15" Height="15" DockPanel.Dock="Left"
+                                                 Stroke="{DynamicResource TextTertiaryBrush}" VerticalAlignment="Top" />
+                            <TextBlock Text="CONNEXION" TextWrapping="Wrap" Style="{StaticResource FieldLabelStyle}" Margin="7,0,0,0" />
+                        </DockPanel>
+                        <TextBlock Text="{Binding ConnectionStatus}" TextWrapping="Wrap"
+                                   Style="{StaticResource BodyStrongStyle}" Margin="0,10,0,0" />
+                    </StackPanel>
+                </Border>
+
+                <Border Style="{StaticResource DemoCardStyle}" Margin="4,0,4,0">
+                    <StackPanel>
+                        <DockPanel LastChildFill="True">
+                            <controls:LucideIcon Icon="Monitor" Width="15" Height="15" DockPanel.Dock="Left"
+                                                 Stroke="{DynamicResource TextTertiaryBrush}" VerticalAlignment="Top" />
+                            <TextBlock Text="PARC (CACHE LOCAL)" TextWrapping="Wrap" Style="{StaticResource FieldLabelStyle}" Margin="7,0,0,0" />
+                        </DockPanel>
+                        <TextBlock Text="{Binding ComputersSummaryText}" TextWrapping="Wrap"
+                                   Style="{StaticResource BodyStrongStyle}" Margin="0,10,0,0" />
+                        <TextBlock Text="{Binding OuCountText}" TextWrapping="Wrap" Style="{StaticResource CaptionStyle}" Margin="0,6,0,0" />
+                    </StackPanel>
+                </Border>
+
+                <Border Style="{StaticResource DemoCardStyle}" Margin="4,0,4,0">
+                    <StackPanel>
+                        <DockPanel LastChildFill="True">
+                            <controls:LucideIcon Icon="ListChecks" Width="15" Height="15" DockPanel.Dock="Left"
+                                                 Stroke="{DynamicResource TextTertiaryBrush}" VerticalAlignment="Top" />
+                            <TextBlock Text="GPO DU DOMAINE" TextWrapping="Wrap" Style="{StaticResource FieldLabelStyle}" Margin="7,0,0,0" />
+                        </DockPanel>
+                        <TextBlock Text="{Binding GpoCountText}" Style="{StaticResource MetricValueStyle}" Margin="0,8,0,0" />
+                        <TextBlock Text="lu lors de la dernière synchronisation" Style="{StaticResource CaptionStyle}" TextWrapping="Wrap" />
+                    </StackPanel>
+                </Border>
+
+                <Border Style="{StaticResource DemoCardStyle}" Margin="8,0,0,0">
+                    <StackPanel>
+                        <DockPanel LastChildFill="True">
+                            <controls:LucideIcon Icon="Notebook" Width="15" Height="15" DockPanel.Dock="Left"
+                                                 Stroke="{DynamicResource TextTertiaryBrush}" VerticalAlignment="Top" />
+                            <TextBlock Text="ENTRÉES D'AUDIT" TextWrapping="Wrap" Style="{StaticResource FieldLabelStyle}" Margin="7,0,0,0" />
+                        </DockPanel>
+                        <TextBlock Text="{Binding AuditCountText}" Style="{StaticResource MetricValueStyle}" Margin="0,8,0,0" />
+                        <TextBlock Text="opérations enregistrées localement" Style="{StaticResource CaptionStyle}" TextWrapping="Wrap" />
+                    </StackPanel>
+                </Border>
+            </UniformGrid>
+
+            <!-- ========== Session et synchronisation avec le domaine ========== -->
+            <Border Style="{StaticResource DemoCardStyle}" Margin="0,12,0,0">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <StackPanel Grid.Column="0">
+                        <TextBlock Text="SESSION ET SYNCHRONISATION AVEC LE DOMAINE" Style="{StaticResource FieldLabelStyle}" />
+                        <TextBlock Text="{Binding SessionText}" TextWrapping="Wrap" Style="{StaticResource BodyStrongStyle}" Margin="0,8,0,0" />
+                        <TextBlock Text="{Binding HealthText}" TextWrapping="Wrap" Style="{StaticResource CaptionStyle}" Margin="0,4,0,0"
+                                   Visibility="{Binding HealthText, Converter={StaticResource EmptyStringToCollapsedConverter}}" />
+                        <TextBlock Text="{Binding SyncDetailText}" TextWrapping="Wrap" Style="{StaticResource BodyStyle}" Margin="0,6,0,0" />
+                        <TextBlock Text="{Binding AccountsSummaryText}" TextWrapping="Wrap" Style="{StaticResource BodyStyle}" Margin="0,4,0,0" />
+                        <TextBlock Text="{Binding SyncWarningsText}" TextWrapping="Wrap" Foreground="{DynamicResource WarningBrush}"
+                                   Style="{StaticResource CaptionStyle}" Margin="0,4,0,0"
+                                   Visibility="{Binding SyncWarningsText, Converter={StaticResource EmptyStringToCollapsedConverter}}" />
+                    </StackPanel>
+                    <StackPanel Grid.Column="1" VerticalAlignment="Top" Margin="16,0,0,0">
+                        <Button Style="{StaticResource PrimaryButtonStyle}"
+                                Command="{Binding SynchronizeCommand}"
+                                ToolTip="Collecter les OU, les ordinateurs, les comptes clients, les GPO et leurs liens"
+                                AutomationProperties.Name="Synchroniser avec le domaine">
+                            <StackPanel Orientation="Horizontal">
+                                <controls:LucideIcon Icon="RefreshCw" Width="14" Height="14" />
+                                <TextBlock Text="Synchroniser" Margin="7,0,0,0" VerticalAlignment="Center" />
+                            </StackPanel>
+                        </Button>
+                        <Button Content="Cibler des postes" Style="{StaticResource SecondaryButtonStyle}"
+                                Command="{Binding DataContext.NavigateToCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                CommandParameter="machines"
+                                Margin="0,8,0,0" />
+                    </StackPanel>
+                </Grid>
+            </Border>
+
+            <!-- Actions rapides : navigation dans la coquille, aucune page fantôme -->
+            <Border Style="{StaticResource DemoCardStyle}" Margin="0,12,0,0">
+                <StackPanel>
+                    <TextBlock Text="ALLER À" Style="{StaticResource FieldLabelStyle}" />
+                    <WrapPanel Margin="0,10,0,0">
+                        <Button Style="{StaticResource SecondaryButtonStyle}" Margin="0,0,8,0"
+                                Command="{Binding DataContext.NavigateToCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                CommandParameter="machines">
+                            <StackPanel Orientation="Horizontal">
+                                <controls:LucideIcon Icon="Users" Width="14" Height="14" />
+                                <TextBlock Text="Comptes ciblés" Margin="7,0,0,0" VerticalAlignment="Center" />
+                            </StackPanel>
+                        </Button>
+                        <Button Style="{StaticResource SecondaryButtonStyle}" Margin="0,0,8,0"
+                                Command="{Binding DataContext.NavigateToCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                CommandParameter="gpos">
+                            <StackPanel Orientation="Horizontal">
+                                <controls:LucideIcon Icon="ListChecks" Width="14" Height="14" />
+                                <TextBlock Text="Gestion des GPO" Margin="7,0,0,0" VerticalAlignment="Center" />
+                            </StackPanel>
+                        </Button>
+                        <Button Style="{StaticResource SecondaryButtonStyle}" Margin="0,0,8,0"
+                                Command="{Binding DataContext.NavigateToCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                CommandParameter="clients">
+                            <StackPanel Orientation="Horizontal">
+                                <controls:LucideIcon Icon="Monitor" Width="14" Height="14" />
+                                <TextBlock Text="Postes clients" Margin="7,0,0,0" VerticalAlignment="Center" />
+                            </StackPanel>
+                        </Button>
+                        <Button Style="{StaticResource SecondaryButtonStyle}" Margin="0,0,8,0"
+                                Command="{Binding DataContext.NavigateToCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                CommandParameter="audit">
+                            <StackPanel Orientation="Horizontal">
+                                <controls:LucideIcon Icon="History" Width="14" Height="14" />
+                                <TextBlock Text="Journal d'audit" Margin="7,0,0,0" VerticalAlignment="Center" />
+                            </StackPanel>
+                        </Button>
+                        <Button Style="{StaticResource SecondaryButtonStyle}"
+                                Command="{Binding DataContext.NavigateToCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                CommandParameter="settings">
+                            <StackPanel Orientation="Horizontal">
+                                <controls:LucideIcon Icon="Settings" Width="14" Height="14" />
+                                <TextBlock Text="Paramètres" Margin="7,0,0,0" VerticalAlignment="Center" />
+                            </StackPanel>
+                        </Button>
+                    </WrapPanel>
+                </StackPanel>
+            </Border>
+
+            <!-- Découverte du masque réseau -->
+            <Border Style="{StaticResource DemoCardStyle}" Margin="0,12,0,0">
+                <StackPanel>
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Grid.Column="0">
+                            <StackPanel Orientation="Horizontal">
+                                <controls:LucideIcon Icon="Activity" Width="15" Height="15" Stroke="{DynamicResource TextTertiaryBrush}" />
+                                <TextBlock Text="MACHINES DU MASQUE RÉSEAU DU SERVEUR" Style="{StaticResource FieldLabelStyle}" Margin="7,0,0,0" />
+                            </StackPanel>
+                            <TextBlock Text="{Binding SubnetSummaryText}" Style="{StaticResource BodyStrongStyle}" Margin="0,8,0,0" TextWrapping="Wrap" />
+                        </StackPanel>
+                        <Button Grid.Column="1" Content="Découvrir le sous-réseau"
+                                Style="{StaticResource PrimaryButtonStyle}"
+                                Command="{Binding DiscoverSubnetCommand}"
+                                VerticalAlignment="Center"
+                                ToolTip="Balayage ICMP du /24 du contrôleur de domaine, croisé avec l'inventaire AD DS" />
+                    </Grid>
+                    <TextBlock Text="Balayage du masque /24 du contrôleur de domaine (254 adresses, ICMP parallèle) croisé avec l'inventaire AD DS : chaque hôte en ligne est rapproché de son objet ordinateur. Les machines connues d'AD DS mais non joignables restent affichées « hors ligne » — ICMP étant souvent bloqué, un ping échoué ne prouve pas qu'une machine est éteinte."
+                               Style="{StaticResource HintStyle}" Margin="0,8,0,0" />
+
+                    <Border Margin="0,10,0,0" Padding="12" CornerRadius="10"
+                            Background="{DynamicResource InputBackgroundBrush}"
+                            BorderThickness="1"
+                            BorderBrush="{DynamicResource BorderBrush}"
+                            Visibility="{Binding ShowSubnetStatus, Converter={StaticResource BooleanToVisibilityConverter}}">
+                        <TextBlock Text="{Binding SubnetStatusMessage}" TextWrapping="Wrap">
+                            <TextBlock.Style>
+                                <Style TargetType="TextBlock" BasedOn="{StaticResource BodyStyle}">
+                                    <Setter Property="Foreground" Value="{DynamicResource SuccessBrush}" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsSubnetStatusError}" Value="True">
+                                            <Setter Property="Foreground" Value="{DynamicResource DangerBrush}" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBlock.Style>
+                        </TextBlock>
+                    </Border>
+
+                    <DataGrid ItemsSource="{Binding Hosts}"
+                              AutoGenerateColumns="False"
+                              IsReadOnly="True"
+                              CanUserAddRows="False"
+                              Margin="0,10,0,0"
+                              Style="{StaticResource DataGridStyle}"
+                              Visibility="{Binding ShowHosts, Converter={StaticResource BooleanToVisibilityConverter}}">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Statut" Binding="{Binding StatusText}" Width="1.4*" />
+                            <DataGridTextColumn Header="Nom" Binding="{Binding HostName, TargetNullValue='—'}" Width="1.8*" />
+                            <DataGridTextColumn Header="Adresse IP" Binding="{Binding IpDisplay}" Width="1.2*" />
+                            <DataGridTextColumn Header="Source" Binding="{Binding SourceText}" Width="1.4*" />
+                            <DataGridTextColumn Header="Système" Binding="{Binding OperatingSystem, TargetNullValue='—'}" Width="1.8*" />
+                            <DataGridTextColumn Header="OU (AD DS)" Binding="{Binding AdOuDistinguishedName, TargetNullValue='—'}" Width="2.4*" />
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </StackPanel>
+            </Border>
+
+            <!-- Dernières opérations auditées -->
+            <Border Style="{StaticResource DemoCardStyle}" Margin="0,12,0,0" Padding="18,16">
+                <StackPanel>
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Grid.Column="0" Text="5 DERNIÈRES OPÉRATIONS" Style="{StaticResource FieldLabelStyle}" />
+                        <Button Grid.Column="1" Style="{StaticResource GhostButtonStyle}" Padding="6,2" MinHeight="24"
+                                Command="{Binding DataContext.NavigateToCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                CommandParameter="audit"
+                                AutomationProperties.Name="Ouvrir le journal d'audit">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="Journal complet" VerticalAlignment="Center" />
+                                <controls:LucideIcon Icon="ChevronRight" Width="12" Height="12" Margin="5,0,0,0" />
+                            </StackPanel>
+                        </Button>
+                    </Grid>
+                    <ItemsControl ItemsSource="{Binding RecentEntries}" Margin="0,10,0,0">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Grid Margin="0,0,0,8">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="150" />
+                                        <ColumnDefinition Width="90" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Grid.Column="0" Text="{Binding Timestamp}" Style="{StaticResource CaptionStyle}" />
+                                    <TextBlock Grid.Column="1" Text="{Binding ResultText}">
+                                        <TextBlock.Style>
+                                            <Style TargetType="TextBlock" BasedOn="{StaticResource BodyStrongStyle}">
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding Result}" Value="{x:Static models:AuditResult.Success}">
+                                                        <Setter Property="Foreground" Value="{DynamicResource SuccessBrush}" />
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding Result}" Value="{x:Static models:AuditResult.Warning}">
+                                                        <Setter Property="Foreground" Value="{DynamicResource WarningBrush}" />
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding Result}" Value="{x:Static models:AuditResult.Failure}">
+                                                        <Setter Property="Foreground" Value="{DynamicResource DangerBrush}" />
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </TextBlock.Style>
+                                    </TextBlock>
+                                    <TextBlock Grid.Column="2" Text="{Binding Message}" Style="{StaticResource BodyStyle}" TextTrimming="CharacterEllipsis" />
+                                </Grid>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+            </Border>
+
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

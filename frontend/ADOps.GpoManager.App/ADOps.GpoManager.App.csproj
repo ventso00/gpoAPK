@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <OutputType>WinExe</OutputType>
+    <RootNamespace>ADOps.GpoManager.App</RootNamespace>
+    <Description>ADOps GPO Manager — interface WPF d'administration des GPO du domaine (Phase 1).</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Resource Include="Assets\logo.jpg" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\backend\ADOps.GpoManager.Core\ADOps.GpoManager.Core.csproj" />
+    <ProjectReference Include="..\..\backend\ADOps.GpoManager.PowerShell\ADOps.GpoManager.PowerShell.csproj" />
+    <ProjectReference Include="..\..\backend\ADOps.GpoManager.Infrastructure\ADOps.GpoManager.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\backend\ADOps.GpoManager.ActiveDirectory\ADOps.GpoManager.ActiveDirectory.csproj" />
+    <ProjectReference Include="..\..\backend\ADOps.GpoManager.Templates\ADOps.GpoManager.Templates.csproj" />
+    <PackageReference Include="CommunityToolkit.Mvvm" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
+  </ItemGroup>
+
+</Project>

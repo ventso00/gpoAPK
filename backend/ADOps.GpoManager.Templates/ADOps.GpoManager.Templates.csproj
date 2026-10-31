@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <RootNamespace>ADOps.GpoManager.Templates</RootNamespace>
+    <Description>Catalogue de modèles de stratégies (JSON versionnés, validés) pour ADOps GPO Manager.</Description>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <!-- Les modèles JSON sont embarqués : aucune dépendance à des fichiers externes. -->
+    <EnableDefaultEmbeddedResourceItems>false</EnableDefaultEmbeddedResourceItems>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="Templates\*.json" />
+    <EmbeddedResource Include="..\gpo\gpo_catalog.json">
+      <LogicalName>gpo_catalog.json</LogicalName>
+    </EmbeddedResource>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\ADOps.GpoManager.Core\ADOps.GpoManager.Core.csproj" />
+  </ItemGroup>
+
+</Project>
